@@ -951,7 +951,6 @@
   /* Stable phone hero and comfortable touch targets. */
   .grid > *, .form-grid > *, .contact-grid > *, .visualizer > *{min-width:0;}
   @media (max-width:767px){
-    .scroll-hero-background-video{display:none;}
     .form-group input,.form-group select,.form-group textarea{font-size:16px;min-width:0;max-width:100%;}
     .testimonial-track{animation:none;}
     .testimonial-column{overflow:visible;}
@@ -1861,7 +1860,6 @@
         <form id="quoteForm" action="https://formsubmit.co/angelkhatib4@gmail.com" method="POST" enctype="multipart/form-data">
           <input type="hidden" name="_subject" value="New Splash & Dash Quote Request">
           <input type="hidden" name="_template" value="table">
-          <input type="hidden" name="_next" id="quoteNext" value="">
           <input type="hidden" name="service" id="quoteService" value="Paint Correction">
           <input type="hidden" name="visualizerEstimate" id="visualizerEstimate" value="">
           <div class="form-error" id="quoteFormError" role="alert">Please fill out all required fields before submitting the quote.</div>
@@ -2266,23 +2264,24 @@
 
   // Load decorative video only when visible; respect motion and data preferences.
   var motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
-  var mobileHero = window.matchMedia('(max-width: 767px)');
   var heroVideos = Array.from(document.querySelectorAll('.scroll-hero video'));
   var motionPaused = motionPreference.matches || !!(navigator.connection && navigator.connection.saveData);
   var heroVisible = true;
   function syncHeroMotion(){
     heroVideos.forEach(function(video){
-      var shouldPlay = !motionPaused && heroVisible && !document.hidden &&
-        !(mobileHero.matches && video.classList.contains('scroll-hero-background-video'));
+      var shouldPlay = !motionPaused && heroVisible && !document.hidden;
       if (shouldPlay) {
         var source = video.querySelector('source[data-src]');
         if (source) { source.src = source.dataset.src; source.removeAttribute('data-src'); video.load(); }
+        video.muted = true;
+        video.playsInline = true;
         video.play().catch(function(){});
       } else video.pause();
     });
   }
   motionPreference.addEventListener('change', function(){ motionPaused = motionPreference.matches; syncHeroMotion(); });
-  mobileHero.addEventListener('change', syncHeroMotion);
+  document.addEventListener('touchend', syncHeroMotion, {passive:true});
+  document.addEventListener('click', syncHeroMotion);
   document.addEventListener('visibilitychange', syncHeroMotion);
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(function(entries){
@@ -2506,7 +2505,6 @@
   var quoteForm = document.getElementById('quoteForm');
   var formConfirm = document.getElementById('quote-confirmation');
   var quoteFormError = document.getElementById('quoteFormError');
-  var quoteNext = document.getElementById('quoteNext');
   var quoteSubmitButton = quoteForm.querySelector('button[type="submit"]');
   var qPhotos = document.getElementById('qPhotos');
   var qInspDate = document.getElementById('qInspDate');
@@ -2525,6 +2523,7 @@
   }
 
   quoteForm.addEventListener('invalid', function(){
+    quoteFormError.textContent = 'Please fill out all required fields before submitting the quote.';
     window.clearTimeout(quoteFormErrorTimer);
     window.clearTimeout(quoteFormErrorFadeTimer);
     quoteFormError.classList.remove('is-fading');
@@ -2587,29 +2586,54 @@
     vArtPreview.classList.add('is-visible');
   });
 
-  quoteForm.addEventListener('submit', function(){
-    quoteFormError.classList.remove('is-visible');
+  quoteForm.addEventListener('submit', async function(event){
+    event.preventDefault();
+    if (quoteSubmitButton.disabled) return;
+    window.clearTimeout(quoteFormErrorTimer);
+    window.clearTimeout(quoteFormErrorFadeTimer);
+    quoteFormError.classList.remove('is-visible', 'is-fading');
     formConfirm.classList.remove('is-visible');
-    quoteNext.value = window.location.origin + window.location.pathname + '?quote=sent#quote-confirmation';
+    if (!quoteForm.reportValidity()) return;
+
+    var payload = new FormData(quoteForm);
+    var uploadBytes = 0;
+    payload.forEach(function(value){
+      if (value instanceof File) uploadBytes += value.size;
+    });
+    if (uploadBytes > 10 * 1024 * 1024) {
+      quoteFormError.textContent = 'Please keep your photo and artwork uploads under 10 MB combined.';
+      quoteFormError.classList.add('is-visible');
+      return;
+    }
     quoteSubmitButton.disabled = true;
     quoteSubmitButton.textContent = 'Sending quote request…';
-  });
-
-  if (new URLSearchParams(window.location.search).get('quote') === 'sent') {
-    formConfirm.classList.add('is-visible');
-    quoteSubmitButton.textContent = 'Send Another Quote';
-    window.history.replaceState({}, document.title, window.location.pathname + '#quote-confirmation');
-    window.requestAnimationFrame(function(){
-      formConfirm.scrollIntoView({behavior:'smooth', block:'center'});
+    quoteForm.setAttribute('aria-busy', 'true');
+    var controller = new AbortController();
+    var timeout = window.setTimeout(function(){ controller.abort(); }, 60000);
+    try {
+      var response = await fetch(quoteForm.action.replace('formsubmit.co/', 'formsubmit.co/ajax/'), {
+        method: 'POST',
+        headers: {'Accept': 'application/json'},
+        body: payload,
+        signal: controller.signal
+      });
+      var result = await response.json();
+      if (!response.ok || !(result.success === true || result.success === 'true')) {
+        throw new Error('Submission was not confirmed');
+      }
+      formConfirm.classList.add('is-visible');
+      formConfirm.scrollIntoView({behavior:motionPreference.matches ? 'auto' : 'smooth', block:'center'});
       formConfirm.focus({preventScroll:true});
-    });
-  }
-
-  // Restore the button when returning from FormSubmit with the browser's Back
-  // button, including pages restored from the back-forward cache.
-  window.addEventListener('pageshow', function(){
-    quoteSubmitButton.disabled = false;
-    if (!formConfirm.classList.contains('is-visible')) quoteSubmitButton.textContent = 'Submit Quote Request';
+    } catch (error) {
+      quoteFormError.textContent = 'We could not confirm your request. Your details are still here. Please try again or call (340) 775-7405.';
+      quoteFormError.classList.add('is-visible');
+      quoteFormError.scrollIntoView({behavior:'auto', block:'center'});
+    } finally {
+      window.clearTimeout(timeout);
+      quoteSubmitButton.disabled = false;
+      quoteSubmitButton.textContent = formConfirm.classList.contains('is-visible') ? 'Send Another Quote' : 'Submit Quote Request';
+      quoteForm.removeAttribute('aria-busy');
+    }
   });
 
   // ---------- Wrap visualizer ----------
