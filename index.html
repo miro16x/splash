@@ -284,6 +284,32 @@
     display:flex;align-items:center;flex:none;box-shadow:0 5px 16px rgba(5,18,33,.22);
   }
   .brand-logo{display:block;width:auto;height:64px;object-fit:contain;}
+  .brand-mobile-title{display:none;}
+  @media (max-width:767px){
+    .site-nav .nav-row{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;}
+    .site-nav .nav-row > .brand{grid-column:2;grid-row:1;justify-self:center;}
+    .site-nav .nav-cta-group{display:contents;}
+    .site-nav .theme-toggle{grid-column:1;grid-row:1;}
+    .site-nav .nav-toggle{grid-column:3;grid-row:1;}
+    .site-nav .brand-logo-badge{display:none;}
+    .brand-mobile-title{
+      display:block;position:relative;padding:.2rem .1rem .45rem;
+      font-family:var(--font-display);font-size:clamp(1.15rem,4.6vw,1.65rem);
+      font-weight:700;letter-spacing:-.045em;line-height:1.2;white-space:nowrap;
+      color:var(--aqua-light);
+    }
+    .brand-mobile-title::after{
+      content:"";position:absolute;bottom:.1rem;left:0;width:100%;height:6px;
+      border-bottom:3px solid var(--coral);border-radius:0 0 50% 50%;
+      transform:rotate(-3deg);
+    }
+    .brand-mobile-title .brand-and{
+      display:inline-block;font-size:.65em;font-style:italic;
+      letter-spacing:0;color:var(--text-on-deep);transform:rotate(-7deg);
+    }
+    :root[data-theme="light"] .brand-mobile-title{color:var(--ocean-deep);}
+    :root[data-theme="light"] .brand-mobile-title .brand-and{color:var(--ocean-mid);}
+  }
   .footer-brand .brand-logo{height:135px;}
   .footer-brand .brand-logo-badge{padding:.45rem .7rem;border-radius:16px;}
 
@@ -976,6 +1002,7 @@
   <nav class="site-nav" id="siteNav" aria-label="Primary navigation">
     <div class="container nav-row">
       <a class="brand" href="#home" aria-label="Splash &amp; Dash home">
+        <span class="brand-mobile-title" aria-hidden="true">Splash <span class="brand-and">and</span> Dash</span>
         <span class="brand-logo-badge">
           <img class="brand-logo" src="images/brand-logo-512.png" alt="Splash and Dash Car Wash Auto Detail Center" width="512" height="341" fetchpriority="high">
         </span>
@@ -1154,10 +1181,6 @@
         <div class="card reveal">
           <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M12 22v-6M4.9 4.9l4.2 4.2M14.9 14.9l4.2 4.2M2 12h6M16 12h6M4.9 19.1l4.2-4.2M14.9 9.1l4.2-4.2"/></svg></div>
           <h3>Engine‑Bay Detailing</h3><p>Careful degreasing and dressing of the bay.</p>
-        </div>
-        <div class="card reveal">
-          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l4-8h10l4 8-9 9-9-9z"/></svg></div>
-          <h3>Premium Auto Detailing</h3><p>Our most thorough interior + exterior service.</p>
         </div>
       </div>
 
@@ -1895,7 +1918,7 @@
                 <select id="cLevel" name="correctionLevel" required><option>Enhancement / one‑step polish</option><option>Stage 1</option><option>Stage 2</option><option>Not sure — recommend one</option></select>
               </div>
               <div class="form-group"><label for="cProtection">Desired protection after correction</label>
-                <select id="cProtection" name="correctionProtection" required><option>Ceramic coating</option><option>Paint sealant</option><option>Wax</option><option>None yet</option></select>
+                <select id="cProtection" name="correctionProtection" required><option>Ceramic coating</option><option>Wax</option><option>None yet</option></select>
               </div>
               <div class="form-group span-2">
                 <label>Present conditions <span class="hint">(check all that apply)</span></label>
