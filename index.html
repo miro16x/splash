@@ -179,7 +179,7 @@
   html{scroll-behavior:smooth;}
   @media (prefers-reduced-motion: reduce){
     html{scroll-behavior:auto;}
-    *,*::before,*::after{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+    *,*::before,*::after{animation:none!important;transition:none!important;}
   }
   body{
     margin:0;
@@ -343,13 +343,6 @@
   }
 
   /* ---------- Scroll-expansion hero ---------- */
-  /* Adapted from components/media.txt (a React/Next.js/Framer-Motion/shadcn
-     "ScrollExpandMedia" component) into vanilla CSS/JS for this static,
-     dependency-free site. The scroll-driven expand/collapse and split-title
-     choreography are ported 1:1; the hard `window.scrollTo(0,0)` scroll-lock
-     from the original is intentionally dropped since this is a full
-     multi-section site (nav anchors and keyboard scrolling must keep working),
-     not a single-hero demo page — see initScrollHero() in the script below. */
   .scroll-hero{
     position:relative;overflow:hidden;color:var(--text-on-deep);
     background:linear-gradient(160deg, var(--ocean-deep) 0%, var(--ocean-mid) 55%, var(--ocean-shallow) 100%);
@@ -387,8 +380,6 @@
   .scroll-hero-date{margin:0;color:var(--aqua-light);font-family:var(--font-mono);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;}
   .scroll-hero-hint{margin:0;display:flex;flex-direction:column;align-items:center;gap:.2rem;color:var(--text-on-deep-soft);font-size:.8rem;transition:opacity .3s ease;}
   .scroll-hero-hint svg{width:18px;height:18px;animation:heroHintBounce 1.8s ease-in-out infinite;}
-  .hero-video-toggle{border:1px solid rgba(255,255,255,.38);border-radius:999px;padding:.35rem .7rem;background:rgba(5,18,33,.62);color:#fff;font:600 .72rem/1 var(--font-body);cursor:pointer;}
-  .hero-video-toggle:hover{background:rgba(5,18,33,.82);}
   @keyframes heroHintBounce{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(6px);} }
   .scroll-hero-title{
     position:relative;z-index:1;margin:0;display:flex;flex-direction:column;gap:.1em;pointer-events:none;
@@ -397,7 +388,7 @@
   .scroll-hero-word{display:block;transition:transform .05s linear;}
   .scroll-hero-content{
     position:relative;max-width:640px;margin-inline:auto;padding-block:clamp(2rem,6vw,4rem) clamp(4rem,9vw,6rem);
-    text-align:center;opacity:0;transform:translateY(16px);
+    text-align:center;opacity:1;transform:none;
     transition:opacity .5s ease, transform .5s ease;
   }
   .scroll-hero-content.is-visible{opacity:1;transform:translateY(0);}
@@ -877,7 +868,7 @@
   .social-item:hover .social-tooltip,.social-item:focus-within .social-tooltip{bottom:-50px;opacity:1;visibility:visible;}
   @media (prefers-reduced-motion:reduce){.socials a,.social-fill,.socials svg,.social-tooltip{transition:none;}}
 
-  .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease, transform .6s ease;}
+  .reveal{opacity:1;transform:none;transition:opacity .6s ease, transform .6s ease;}
   .reveal.is-visible{opacity:1;transform:none;}
 
   .band-quote{
@@ -956,6 +947,25 @@
     .hero-stats{grid-template-columns:1fr;}
     .scroll-hero-media{max-width:90vw;}
   }
+
+  /* Stable phone hero and comfortable touch targets. */
+  .grid > *, .form-grid > *, .contact-grid > *, .visualizer > *{min-width:0;}
+  @media (max-width:767px){
+    .scroll-hero-background-video{display:none;}
+    .form-group input,.form-group select,.form-group textarea{font-size:16px;min-width:0;max-width:100%;}
+    .testimonial-track{animation:none;}
+    .testimonial-column{overflow:visible;}
+    .testimonials-columns{max-height:520px;overflow-y:auto;mask-image:none;-webkit-mask-image:none;}
+    .testimonial-card[aria-hidden="true"]{display:none;}
+  }
+  /* Pin the hero while its video expands, then let it leave the viewport. */
+  .scroll-hero{overflow:clip;}
+  .hero-scroll-track{height:180svh;}
+  .hero-sticky{position:sticky;top:0;height:100svh;overflow:hidden;}
+  .scroll-hero-stage{min-height:100svh;}
+  .scroll-hero-background-video,.scroll-hero-bg{height:100%;}
+  .scroll-hero-media{max-height:none;}
+  @media(prefers-reduced-motion:reduce){.hero-scroll-track{height:100svh;}}
 </style>
 </head>
 <body>
@@ -1012,15 +1022,17 @@
   </nav>
 
   <section class="scroll-hero" id="home">
-    <video class="scroll-hero-background-video" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
-      <source src="videos/316029-hero.m4v" type="video/mp4">
+    <div class="hero-scroll-track">
+    <div class="hero-sticky">
+    <video class="scroll-hero-background-video" muted loop playsinline preload="none" aria-hidden="true">
+      <source data-src="videos/316029-hero.m4v" type="video/mp4">
     </video>
     <div class="scroll-hero-bg" id="scrollHeroBg" aria-hidden="true"></div>
     <div class="container scroll-hero-stage">
       <div class="scroll-hero-media" id="scrollHeroMedia">
         <div class="scroll-hero-media-inner">
-          <video class="scroll-hero-video" autoplay muted loop playsinline preload="metadata" aria-label="Splash and Dash automotive detailing">
-            <source src="videos/10785269-hd_1080_1920_30fps-trimmed.m4v" type="video/mp4">
+          <video class="scroll-hero-video" muted loop playsinline preload="none" aria-label="Splash and Dash automotive detailing">
+            <source data-src="videos/10785269-hd_1080_1920_30fps-trimmed.m4v" type="video/mp4">
           </video>
         </div>
         <div class="scroll-hero-media-caption">
@@ -1029,7 +1041,6 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
             Scroll to explore
           </p>
-          <button class="hero-video-toggle" id="heroVideoToggle" type="button" aria-pressed="false">Pause motion</button>
         </div>
       </div>
       <h1 class="scroll-hero-title">
@@ -1038,6 +1049,8 @@
       </h1>
     </div>
 
+    </div>
+    </div>
     <div class="container">
       <div class="scroll-hero-content" id="scrollHeroContent">
         <p class="scroll-hero-tagline">Drive Clean.</p>
@@ -2251,153 +2264,60 @@
   var yearEl = document.getElementById('year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-  // Give visitors control over decorative motion and honor reduced-motion.
-  var heroVideoToggle = document.getElementById('heroVideoToggle');
+  // Load decorative video only when visible; respect motion and data preferences.
+  var motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var mobileHero = window.matchMedia('(max-width: 767px)');
   var heroVideos = Array.from(document.querySelectorAll('.scroll-hero video'));
-  function setHeroMotion(paused){
-    heroVideos.forEach(function(video){ if (paused) video.pause(); else video.play().catch(function(){}); });
-    heroVideoToggle.setAttribute('aria-pressed', paused ? 'true' : 'false');
-    heroVideoToggle.textContent = paused ? 'Play motion' : 'Pause motion';
+  var motionPaused = motionPreference.matches || !!(navigator.connection && navigator.connection.saveData);
+  var heroVisible = true;
+  function syncHeroMotion(){
+    heroVideos.forEach(function(video){
+      var shouldPlay = !motionPaused && heroVisible && !document.hidden &&
+        !(mobileHero.matches && video.classList.contains('scroll-hero-background-video'));
+      if (shouldPlay) {
+        var source = video.querySelector('source[data-src]');
+        if (source) { source.src = source.dataset.src; source.removeAttribute('data-src'); video.load(); }
+        video.play().catch(function(){});
+      } else video.pause();
+    });
   }
-  heroVideoToggle.addEventListener('click', function(){
-    setHeroMotion(heroVideoToggle.getAttribute('aria-pressed') !== 'true');
-  });
+  motionPreference.addEventListener('change', function(){ motionPaused = motionPreference.matches; syncHeroMotion(); });
+  mobileHero.addEventListener('change', syncHeroMotion);
+  document.addEventListener('visibilitychange', syncHeroMotion);
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function(entries){
+      heroVisible = entries[0].isIntersecting;
+      syncHeroMotion();
+    }).observe(document.getElementById('home'));
+  } else syncHeroMotion();
 
-  // ---------- Scroll-expansion hero ----------
-  // Vanilla port of components/media.txt's ScrollExpandMedia (React/Next.js/
-  // Framer Motion/shadcn). Same scroll-driven expand math and split-title
-  // choreography, rebuilt with plain DOM + CSS transitions. Unlike the
-  // original, listeners are scoped to the hero element (not `window`) and
-  // there's no hard `scrollTo(0,0)` lock — this is a full multi-section site,
-  // so in-page nav links and keyboard scrolling need to keep working even
-  // before the hero has finished expanding.
+  // Native scrolling drives expansion while the sticky stage stays in view.
   (function initScrollHero(){
     var hero = document.getElementById('home');
     var media = document.getElementById('scrollHeroMedia');
-    var wordLeft = document.getElementById('scrollHeroWordLeft');
-    var wordRight = document.getElementById('scrollHeroWordRight');
-    var bg = document.getElementById('scrollHeroBg');
+    var words = hero.querySelectorAll('.scroll-hero-word');
     var hint = document.getElementById('scrollHeroHint');
-    var content = document.getElementById('scrollHeroContent');
-    if (!hero || !media || !wordLeft || !wordRight || !bg || !hint || !content) return;
-
-    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var isMobile = window.innerWidth < 768;
-    var scrollProgress = 0;
-    var mediaFullyExpanded = false;
-    var showContent = false;
-    var touchStartY = 0;
-
+    var track = hero.querySelector('.hero-scroll-track');
+    var stage = hero.querySelector('.hero-sticky');
+    var frame = 0;
     function render(){
-      var wMult = isMobile ? 650 : 1250;
-      var hMult = isMobile ? 200 : 400;
-      var txMult = isMobile ? 180 : 150;
-      var mediaWidth = 300 + scrollProgress * wMult;
-      var mediaHeight = 400 + scrollProgress * hMult;
-      var textTranslateX = scrollProgress * txMult;
-
-      media.style.width = mediaWidth + 'px';
-      media.style.height = mediaHeight + 'px';
-      wordLeft.style.transform = 'translateX(-' + textTranslateX + 'vw)';
-      wordRight.style.transform = 'translateX(' + textTranslateX + 'vw)';
-      bg.style.opacity = String(1 - scrollProgress);
-      hint.style.opacity = scrollProgress > 0.15 ? '0' : '1';
-      content.classList.toggle('is-visible', showContent);
+      frame = 0;
+      var distance = track.offsetHeight - stage.offsetHeight;
+      var progress = motionPreference.matches ? 1 : Math.min(1, Math.max(0, -track.getBoundingClientRect().top / Math.max(1, distance)));
+      var startWidth = Math.min(300, window.innerWidth * .76);
+      var endWidth = window.innerWidth * .94;
+      var startHeight = Math.min(400, stage.offsetHeight * .5);
+      var endHeight = stage.offsetHeight * .74;
+      media.style.width = (startWidth + progress * (endWidth - startWidth)) + 'px';
+      media.style.height = (startHeight + progress * (endHeight - startHeight)) + 'px';
+      words.forEach(function(word,index){ word.style.transform = 'translateX(' + (index ? 1 : -1) * progress * 150 + 'vw)'; });
+      hint.style.opacity = progress > .15 ? '0' : '1';
     }
-
-    function update(newProgress){
-      scrollProgress = Math.min(Math.max(newProgress, 0), 1);
-      if (scrollProgress >= 1){
-        mediaFullyExpanded = true;
-        showContent = true;
-      } else if (scrollProgress < 0.75){
-        showContent = false;
-      }
-      render();
-    }
-
+    function schedule(){ if (!frame) frame = requestAnimationFrame(render); }
+    window.addEventListener('scroll', schedule, {passive:true});
+    window.addEventListener('resize', schedule, {passive:true});
+    motionPreference.addEventListener('change', schedule);
     render();
-
-    document.querySelectorAll('.brand[href="#home"]').forEach(function(logo){
-      logo.addEventListener('click', function(event){
-        event.preventDefault();
-        mediaFullyExpanded = false;
-        showContent = false;
-        update(0);
-        window.history.pushState({}, document.title, window.location.pathname + window.location.search + '#home');
-        window.scrollTo({top:0, behavior:reduceMotion ? 'auto' : 'smooth'});
-      });
-    });
-
-    if (reduceMotion){
-      update(1);
-      return;
-    }
-
-    hero.addEventListener('wheel', function(e){
-      if (mediaFullyExpanded && e.deltaY < 0 && window.scrollY <= 5){
-        mediaFullyExpanded = false;
-        e.preventDefault();
-        return;
-      }
-      if (!mediaFullyExpanded){
-        e.preventDefault();
-        update(scrollProgress + e.deltaY * 0.0009);
-      }
-    }, {passive:false});
-
-    hero.addEventListener('touchstart', function(e){
-      touchStartY = e.touches[0].clientY;
-    }, {passive:true});
-
-    hero.addEventListener('touchmove', function(e){
-      if (!touchStartY) return;
-      var touchY = e.touches[0].clientY;
-      var deltaY = touchStartY - touchY;
-      if (mediaFullyExpanded && deltaY < -20 && window.scrollY <= 5){
-        mediaFullyExpanded = false;
-        e.preventDefault();
-        return;
-      }
-      if (!mediaFullyExpanded){
-        e.preventDefault();
-        var scrollFactor = deltaY < 0 ? 0.008 : 0.005;
-        update(scrollProgress + deltaY * scrollFactor);
-        touchStartY = touchY;
-      }
-    }, {passive:false});
-
-    hero.addEventListener('touchend', function(){ touchStartY = 0; }, {passive:true});
-
-    window.addEventListener('keydown', function(e){
-      var active = document.activeElement;
-      var focusInHero = active === document.body || hero.contains(active);
-      if (!focusInHero) return;
-      if (!mediaFullyExpanded && (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ')){
-        e.preventDefault();
-        update(scrollProgress + 0.12);
-      } else if (e.key === 'ArrowUp' || e.key === 'PageUp'){
-        if (mediaFullyExpanded && window.scrollY <= 5){
-          mediaFullyExpanded = false;
-          e.preventDefault();
-        } else if (!mediaFullyExpanded){
-          e.preventDefault();
-          update(scrollProgress - 0.12);
-        }
-      }
-    });
-
-    // If the user reaches this point some other way (in-page nav link,
-    // browser back/forward, anchor on load), snap the hero straight to its
-    // expanded state instead of fighting the scroll.
-    window.addEventListener('scroll', function(){
-      if (!mediaFullyExpanded && window.scrollY > 40) update(1);
-    }, {passive:true});
-
-    window.addEventListener('resize', function(){
-      isMobile = window.innerWidth < 768;
-      render();
-    });
   })();
 
   // VariableFontHoverNav adapted from components/header.txt. The source is a
@@ -2456,26 +2376,22 @@
   navToggle.addEventListener('click', function(){
     var isOpen = document.body.classList.toggle('nav-open');
     navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    navToggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
   });
   document.querySelectorAll('.mobile-panel a').forEach(function(a){
     a.addEventListener('click', function(){
       document.body.classList.remove('nav-open');
       navToggle.setAttribute('aria-expanded','false');
+      navToggle.setAttribute('aria-label','Open menu');
     });
   });
 
-  // ---------- Reveal on scroll ----------
-  var revealEls = document.querySelectorAll('.reveal');
-  if ('IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        if (entry.isIntersecting) { entry.target.classList.add('is-visible'); io.unobserve(entry.target); }
-      });
-    }, {threshold:0.12});
-    revealEls.forEach(function(el){ io.observe(el); });
-  } else {
-    revealEls.forEach(function(el){ el.classList.add('is-visible'); });
-  }
+  document.addEventListener('keydown', function(event){
+    if (event.key === 'Escape' && document.body.classList.contains('nav-open')) {
+      navToggle.click();
+      navToggle.focus();
+    }
+  });
 
   // ---------- Vehicle types ----------
   var VEHICLE_TYPES = ["2-Door Coupe","Small Sedan","Large Sedan","Small SUV/Crossover","Mid-Size SUV","Large SUV","Small Pickup","Mid-Size Pickup","Full-Size Pickup","Large Truck/SUV","Van/Commercial"];
@@ -3125,20 +3041,43 @@
   updateBA();
 
   // ---------- Aftercare tabs ----------
-  var aftercareTabs = document.querySelectorAll('#aftercareTabs .tab-btn');
-  aftercareTabs.forEach(function(btn){
-    btn.addEventListener('click', function(){
-      aftercareTabs.forEach(function(b){ b.setAttribute('aria-selected','false'); });
-      btn.setAttribute('aria-selected','true');
-      document.querySelectorAll('#aftercare .tab-panel').forEach(function(panel){
-        panel.classList.toggle('is-active', panel.dataset.panel === btn.dataset.tab);
-      });
+  var aftercareTabs = Array.from(document.querySelectorAll('#aftercareTabs .tab-btn'));
+  function activateAftercare(btn){
+    aftercareTabs.forEach(function(tab){
+      var selected = tab === btn;
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+      var panel = document.getElementById(tab.getAttribute('aria-controls'));
+      panel.classList.toggle('is-active', selected);
+      panel.hidden = !selected;
+    });
+  }
+  aftercareTabs.forEach(function(btn,index){
+    var panel = document.querySelector('#aftercare .tab-panel[data-panel="' + btn.dataset.tab + '"]');
+    btn.id = 'aftercare-tab-' + btn.dataset.tab;
+    panel.id = 'aftercare-panel-' + btn.dataset.tab;
+    btn.setAttribute('aria-controls', panel.id);
+    panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', btn.id);
+    panel.tabIndex = 0;
+    btn.addEventListener('click', function(){ activateAftercare(btn); });
+    btn.addEventListener('keydown', function(event){
+      var next = index;
+      if (event.key === 'ArrowRight') next = (index + 1) % aftercareTabs.length;
+      else if (event.key === 'ArrowLeft') next = (index + aftercareTabs.length - 1) % aftercareTabs.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = aftercareTabs.length - 1;
+      else return;
+      event.preventDefault();
+      activateAftercare(aftercareTabs[next]);
+      aftercareTabs[next].focus();
     });
   });
+  activateAftercare(aftercareTabs[0]);
 
   // ---------- Material Design ripple ----------
   function addMaterialRipple(control, clientX, clientY){
-    if (control.disabled || control.getAttribute('aria-disabled') === 'true') return;
+    if (motionPreference.matches || control.disabled || control.getAttribute('aria-disabled') === 'true') return;
     var box = control.getBoundingClientRect();
     var x = clientX - box.left;
     var y = clientY - box.top;
