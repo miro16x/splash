@@ -1888,9 +1888,9 @@
           </button>
         </div>
 
-        <form id="quoteForm" action="https://formsubmit.co/angelkhatib4@gmail.com" method="POST" enctype="multipart/form-data">
+        <form id="quoteForm" action="/api/quote" method="POST" enctype="multipart/form-data">
           <input type="hidden" name="_subject" value="Splash and Dash Quote Request">
-          <input type="hidden" name="_template" value="table">
+          <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="display:none">
           <input type="hidden" name="service" id="quoteService" value="Paint Correction">
           <input type="hidden" name="visualizerEstimate" id="visualizerEstimate" value="">
           <div class="form-error" id="quoteFormError" role="alert">Please fill out all required fields before submitting the quote.</div>
@@ -1980,7 +1980,7 @@
               <div class="form-group span-2">
                 <label for="vArt" class="photo-upload-link">Logo / artwork — click to choose</label>
                 <span class="hint">Optional · Image or PDF</span>
-                <input id="vArt" class="photo-upload-input" name="artwork" type="file" accept="image/*,.pdf,application/pdf">
+                <input id="vArt" class="photo-upload-input" name="artwork" type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf">
                 <div class="photo-preview" id="vArtPreview" aria-live="polite">
                   <img id="vArtPreviewImage" alt="Selected logo or artwork preview">
                   <span id="vArtPreviewName"></span>
@@ -2670,7 +2670,7 @@
     var controller = new AbortController();
     var timeout = window.setTimeout(function(){ controller.abort(); }, 60000);
     try {
-      var response = await fetch(quoteForm.action.replace('formsubmit.co/', 'formsubmit.co/ajax/'), {
+      var response = await fetch(quoteForm.action, {
         method: 'POST',
         headers: {'Accept': 'application/json'},
         body: payload,
