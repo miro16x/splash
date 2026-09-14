@@ -10,6 +10,7 @@
 <meta name="theme-color" content="#0A3B73">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lobster&amp;display=swap" media="(max-width:767px)">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&amp;family=Plus+Jakarta+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap">
 <script>
   (function(){
@@ -293,22 +294,20 @@
     .site-nav .nav-toggle{grid-column:3;grid-row:1;}
     .site-nav .brand-logo-badge{display:none;}
     .brand-mobile-title{
-      display:block;position:relative;padding:.2rem .1rem .45rem;
-      font-family:var(--font-display);font-size:clamp(1.15rem,4.6vw,1.65rem);
-      font-weight:700;letter-spacing:-.045em;line-height:1.2;white-space:nowrap;
-      color:var(--aqua-light);
-    }
-    .brand-mobile-title::after{
-      content:"";position:absolute;bottom:.1rem;left:0;width:100%;height:6px;
-      border-bottom:3px solid var(--coral);border-radius:0 0 50% 50%;
-      transform:rotate(-3deg);
+      display:block;padding:.25rem .15rem;
+      font-family:'Lobster','Brush Script MT',cursive;font-size:clamp(1.4rem,5.5vw,2.1rem);
+      font-weight:400;letter-spacing:0;line-height:1.35;white-space:nowrap;
+      color:#8cddff;
+      background:linear-gradient(180deg,#b9eeff 15%,#63c6ff 85%);
+      background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
     }
     .brand-mobile-title .brand-and{
-      display:inline-block;font-size:.65em;font-style:italic;
-      letter-spacing:0;color:var(--text-on-deep);transform:rotate(-7deg);
+      display:inline-block;font-size:.65em;font-style:normal;
+      letter-spacing:0;
     }
-    :root[data-theme="light"] .brand-mobile-title{color:var(--ocean-deep);}
-    :root[data-theme="light"] .brand-mobile-title .brand-and{color:var(--ocean-mid);}
+    :root[data-theme="light"] .brand-mobile-title{
+      color:#10468f;background-image:linear-gradient(180deg,#1673c7 15%,#08377c 85%);
+    }
   }
   .footer-brand .brand-logo{height:135px;}
   .footer-brand .brand-logo-badge{padding:.45rem .7rem;border-radius:16px;}
