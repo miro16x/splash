@@ -1889,7 +1889,7 @@
         </div>
 
         <form id="quoteForm" action="https://formsubmit.co/angelkhatib4@gmail.com" method="POST" enctype="multipart/form-data">
-          <input type="hidden" name="_subject" value="New Splash & Dash Quote Request">
+          <input type="hidden" name="_subject" value="Splash and Dash Quote Request">
           <input type="hidden" name="_template" value="table">
           <input type="hidden" name="service" id="quoteService" value="Paint Correction">
           <input type="hidden" name="visualizerEstimate" id="visualizerEstimate" value="">
@@ -1994,8 +1994,8 @@
               <div class="form-group"><label for="qInspDate">Preferred inspection date</label><input id="qInspDate" name="preferredInspectionDate" type="date"></div>
               <div class="form-group">
                 <label for="qPhotos" class="photo-upload-link">Clear Vehicle Photo — click to choose</label>
-                <span class="hint">JPG or PNG, 10 MB maximum</span>
-                <input id="qPhotos" class="photo-upload-input" name="attachment" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" required>
+                <span class="hint">Optional · JPG or PNG, 10 MB maximum</span>
+                <input id="qPhotos" class="photo-upload-input" name="attachment" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png">
                 <div class="photo-preview" id="qPhotoPreview" aria-live="polite">
                   <img id="qPhotoPreviewImage" alt="Selected vehicle photo preview">
                   <span id="qPhotoPreviewName"></span>
@@ -2627,7 +2627,34 @@
     formConfirm.classList.remove('is-visible');
     if (!quoteForm.reportValidity()) return;
 
-    var payload = new FormData(quoteForm);
+    // Keep internal field names stable while presenting readable email labels.
+    var emailLabels = {
+      service: 'Service', name: 'Customer Name', phone: 'Phone #', email: 'Email',
+      vehicle: 'Vehicle', vehicleType: 'Vehicle Type', paintColor: 'Paint Color',
+      condition: 'Vehicles Condition', correctionLevel: 'Correction Level',
+      correctionProtection: 'Correction Protection', paintConditions: 'Paint Conditions',
+      previousPaintwork: 'Previous Paintwork', ceramicTier: 'Ceramic Tier',
+      ceramicPackage: 'Ceramic Package', ceramicAddOns: 'Ceramic Add-ons',
+      ceramicSurfaceConcerns: 'Ceramic Surface Concerns', currentColor: 'Wrap Color',
+      requestedColorFinish: 'Requested Color / Finish', preferredFilm: 'Preferred Film',
+      wrapCoverage: 'Wrap Coverage', selectedPanels: 'Selected Panels', wrapOptions: 'Wrap Options',
+      preferredInspectionDate: 'Inspection Date', notes: 'Additional Info',
+      contactConsent: 'Contact Consent', visualizerEstimate: 'Visualizer Estimate'
+    };
+    var fields = new FormData(quoteForm);
+    var payload = new FormData();
+    fields.forEach(function(value, name){
+      var label = emailLabels[name] || name;
+      if (value instanceof File) {
+        if (value.size > 0) payload.append(name, value, value.name);
+      } else if (payload.has(label)) {
+        payload.set(label, payload.get(label) + ', ' + value);
+      } else {
+        payload.append(label, value);
+      }
+    });
+    // Preserve the customer's address for the email provider's reply handling.
+    payload.set('_replyto', fields.get('email'));
     var uploadBytes = 0;
     payload.forEach(function(value){
       if (value instanceof File) uploadBytes += value.size;
