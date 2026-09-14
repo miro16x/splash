@@ -989,6 +989,9 @@
   .scroll-hero-stage{min-height:100svh;}
   .scroll-hero-background-video,.scroll-hero-bg{height:100%;}
   .scroll-hero-media{max-height:none;}
+  @media (max-width:767px){
+    .scroll-hero-media{width:min(220px,60vw);height:min(290px,38svh);}
+  }
   @media(prefers-reduced-motion:reduce){.hero-scroll-track{height:100svh;}}
 </style>
 </head>
@@ -2325,10 +2328,11 @@
       frame = 0;
       var distance = track.offsetHeight - stage.offsetHeight;
       var progress = motionPreference.matches ? 1 : Math.min(1, Math.max(0, -track.getBoundingClientRect().top / Math.max(1, distance)));
-      var startWidth = Math.min(300, window.innerWidth * .76);
-      var endWidth = window.innerWidth * .94;
-      var startHeight = Math.min(400, stage.offsetHeight * .5);
-      var endHeight = stage.offsetHeight * .74;
+      var isMobile = window.innerWidth <= 767;
+      var startWidth = isMobile ? Math.min(220, window.innerWidth * .60) : Math.min(300, window.innerWidth * .76);
+      var endWidth = window.innerWidth * (isMobile ? .78 : .94);
+      var startHeight = isMobile ? Math.min(290, stage.offsetHeight * .38) : Math.min(400, stage.offsetHeight * .5);
+      var endHeight = stage.offsetHeight * (isMobile ? .56 : .74);
       media.style.width = (startWidth + progress * (endWidth - startWidth)) + 'px';
       media.style.height = (startHeight + progress * (endHeight - startHeight)) + 'px';
       words.forEach(function(word,index){ word.style.transform = 'translateX(' + (index ? 1 : -1) * progress * 150 + 'vw)'; });
