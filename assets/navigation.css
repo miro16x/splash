@@ -3,14 +3,14 @@
 .navigation-inner{width:100%;max-width:1600px;margin:auto;min-height:108px;padding:14px clamp(24px,4vw,64px);display:flex;align-items:center;gap:clamp(20px,3vw,48px)}
 .navigation-brand{display:flex;flex-shrink:0}.navigation-brand img{width:144px;height:80px;object-fit:contain}
 .navigation-links{display:flex;align-items:center;justify-content:space-evenly;flex:1;min-width:0;gap:8px;list-style:none;padding:0;margin:0}
-.navigation-links>li{position:relative;list-style:none}.navigation a{text-decoration:none;color:inherit}
+.navigation-links>li{position:relative;list-style:none;color:inherit}/* pages that color every li (the policy pages) must not recolor the menu */.navigation a{text-decoration:none;color:inherit}
 .navigation-links>li>a,.menu-trigger{display:flex;align-items:center;gap:7px;min-height:48px;padding:12px 16px;border:0;border-radius:6px;font:600 16px/1.4 'Plus Jakarta Sans',sans-serif;color:inherit;background:transparent;cursor:pointer;white-space:nowrap}
 .menu-trigger span{opacity:.6;transition:transform .2s}.menu-trigger[aria-expanded=true] span{transform:rotate(180deg)}
 .navigation-links>li>a:hover,.menu-trigger:hover,.menu-trigger[aria-expanded=true],.navigation a[aria-current=page]{background:#eef4f8;color:#075e8b}
 .navigation :focus-visible{outline:3px solid #1fbfd1;outline-offset:3px}
 .menu-panel{position:absolute;top:calc(100% + 8px);left:0;width:460px;padding:10px;border:1px solid #dce5ec;border-radius:10px;background:#fff;box-shadow:0 12px 32px #0929471f;animation:menu-in .18s ease-out}
 .menu-panel[hidden]{display:none}.menu-panel ul{display:grid;grid-template-columns:1fr 1fr;gap:6px;list-style:none;padding:0;margin:0}
-.menu-panel li{list-style:none}.menu-panel a{display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:6px;font-size:14px;line-height:1.45}.menu-panel a:hover{background:#eef4f8}.menu-panel strong{font-weight:600}.menu-panel a span{color:#617587;font-size:13px}
+.menu-panel li{list-style:none;color:inherit}.menu-panel a{display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:6px;font-size:14px;line-height:1.45}.menu-panel a:hover{background:#eef4f8}.menu-panel strong{font-weight:600}.menu-panel a span{color:#617587;font-size:13px}
 #menu-resources,#menu-company{left:auto;right:0}#menu-company{width:280px}#menu-company ul{grid-template-columns:1fr}
 .navigation-links>li>a.navigation-quote{background:#0a3b73;color:#fff;margin-left:12px}.navigation-links>li>a.navigation-quote:hover{background:#0f5fa8}
 .menu-toggle,.navigation-theme{border:1px solid #dce5ec;border-radius:6px;background:transparent;color:inherit;cursor:pointer;min-height:44px;padding:8px 12px;font:600 14px 'Plus Jakarta Sans',sans-serif}.menu-toggle{display:none}.navigation-theme{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:48px;height:48px;padding:0;font-size:22px}
