@@ -4,3 +4,6 @@ dist/
 .wrangler/
 .dev.vars*
 .env*
+
+# raw Meshy AI downloads (large); the site uses the compressed copies in models/
+components/*.glb

@@ -49,7 +49,7 @@ export default {
           if (uploaded > 10 * 1024 * 1024) return json(413, 'Uploads must total 10 MB or less');
           const allowed = name === 'attachment' ? ['image/jpeg','image/png'] : ['image/jpeg','image/png','image/webp','image/gif','application/pdf'];
           if (!allowed.includes(file.type)) return json(400, 'Unsupported attachment type');
-          attachments.push({ filename: file.name.replace(/[^a-zA-Z0-9._-]/g, '_'), content: base64(new Uint8Array(await file.arrayBuffer())) });
+          attachments.push({ filename: file.name.replace(/[^a-zA-Z0-9._-]/g, '_') || 'upload', content: base64(new Uint8Array(await file.arrayBuffer())) });
         }
       }
       const result = await fetch('https://api.resend.com/emails', {
