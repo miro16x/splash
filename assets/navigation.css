@@ -3,14 +3,14 @@
 .navigation-inner{width:100%;max-width:1600px;margin:auto;min-height:108px;padding:14px clamp(24px,4vw,64px);display:flex;align-items:center;gap:clamp(20px,3vw,48px)}
 .navigation-brand{display:flex;flex-shrink:0}.navigation-brand img{width:144px;height:80px;object-fit:contain}
 .navigation-links{display:flex;align-items:center;justify-content:space-evenly;flex:1;min-width:0;gap:8px;list-style:none;padding:0;margin:0}
-.navigation-links>li{position:relative;list-style:none}.navigation a{text-decoration:none;color:inherit}
+.navigation-links>li{position:relative;list-style:none;color:inherit}/* pages that color every li (the policy pages) must not recolor the menu */.navigation a{text-decoration:none;color:inherit}
 .navigation-links>li>a,.menu-trigger{display:flex;align-items:center;gap:7px;min-height:48px;padding:12px 16px;border:0;border-radius:6px;font:600 16px/1.4 'Plus Jakarta Sans',sans-serif;color:inherit;background:transparent;cursor:pointer;white-space:nowrap}
 .menu-trigger span{opacity:.6;transition:transform .2s}.menu-trigger[aria-expanded=true] span{transform:rotate(180deg)}
 .navigation-links>li>a:hover,.menu-trigger:hover,.menu-trigger[aria-expanded=true],.navigation a[aria-current=page]{background:#eef4f8;color:#075e8b}
 .navigation :focus-visible{outline:3px solid #1fbfd1;outline-offset:3px}
 .menu-panel{position:absolute;top:calc(100% + 8px);left:0;width:460px;padding:10px;border:1px solid #dce5ec;border-radius:10px;background:#fff;box-shadow:0 12px 32px #0929471f;animation:menu-in .18s ease-out}
 .menu-panel[hidden]{display:none}.menu-panel ul{display:grid;grid-template-columns:1fr 1fr;gap:6px;list-style:none;padding:0;margin:0}
-.menu-panel li{list-style:none}.menu-panel a{display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:6px;font-size:14px;line-height:1.45}.menu-panel a:hover{background:#eef4f8}.menu-panel strong{font-weight:600}.menu-panel a span{color:#617587;font-size:13px}
+.menu-panel li{list-style:none;color:inherit}.menu-panel a{display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:6px;font-size:14px;line-height:1.45}.menu-panel a:hover{background:#eef4f8}.menu-panel strong{font-weight:600}.menu-panel a span{color:#617587;font-size:13px}
 #menu-resources,#menu-company{left:auto;right:0}#menu-company{width:280px}#menu-company ul{grid-template-columns:1fr}
 .navigation-links>li>a.navigation-quote{background:#0a3b73;color:#fff;margin-left:12px}.navigation-links>li>a.navigation-quote:hover{background:#0f5fa8}
 .menu-toggle,.navigation-theme{border:1px solid #dce5ec;border-radius:6px;background:transparent;color:inherit;cursor:pointer;min-height:44px;padding:8px 12px;font:600 14px 'Plus Jakarta Sans',sans-serif}.menu-toggle{display:none}.navigation-theme{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:48px;height:48px;padding:0;font-size:22px}
@@ -40,3 +40,36 @@
 .navigation .menu-trigger,
 :root[data-theme=dark] .navigation .navigation-links>li>a:not(.navigation-quote),
 :root[data-theme=dark] .navigation .menu-trigger{color:inherit}
+
+/* Interactive hover button (.hover-btn): the label slides out while a dot grows into a darker fill
+   and the label returns with an arrow (hover, keyboard focus or press). It lives here because
+   every page with the header loads this file, including the policy pages without site.css. */
+.hover-btn{
+  --hover-btn-bg:#9BD7E8; --hover-btn-fill:#0A3B73; --hover-btn-ink:#0B2036;
+  position:relative;display:inline-flex;align-items:center;justify-content:center;
+  padding:.85rem 2rem;border-radius:999px;overflow:hidden;isolation:isolate;
+  background:var(--hover-btn-bg);color:var(--hover-btn-ink);border:1.5px solid rgba(10,59,115,.25);
+  font-weight:700;font-size:.95rem;text-decoration:none;white-space:nowrap;cursor:pointer;
+  box-shadow:0 10px 24px -12px rgba(10,59,115,.45);
+}
+.hover-btn-label{display:inline-block;transform:translateX(.25rem);transition:transform .3s ease, opacity .3s ease;}
+.hover-btn-reveal{
+  position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;gap:.5rem;
+  color:#fff;opacity:0;transform:translateX(3rem);transition:transform .3s ease, opacity .3s ease;
+}
+.hover-btn-reveal svg{width:1.1em;height:1.1em;flex:none;}
+.hover-btn-dot{
+  position:absolute;left:.85rem;top:calc(50% - .25rem);width:.5rem;height:.5rem;border-radius:.5rem;z-index:0;
+  background:var(--hover-btn-fill);transition:all .3s ease;
+}
+.hover-btn:hover .hover-btn-label,.hover-btn:focus-visible .hover-btn-label,.hover-btn:active .hover-btn-label{transform:translateX(3rem);opacity:0;}
+.hover-btn:hover .hover-btn-reveal,.hover-btn:focus-visible .hover-btn-reveal,.hover-btn:active .hover-btn-reveal{transform:translateX(-.25rem);opacity:1;}
+.hover-btn:hover .hover-btn-dot,.hover-btn:focus-visible .hover-btn-dot,.hover-btn:active .hover-btn-dot{left:0;top:0;width:100%;height:100%;border-radius:999px;transform:scale(1.8);}
+.hover-btn:focus-visible{outline:2px solid #1FBFD1;outline-offset:3px;}
+.hover-btn-sm{padding:.6rem 1.5rem;font-size:.85rem;}
+.footer-grid a.hover-btn{color:var(--hover-btn-ink);--hover-btn-fill:#05213F;}   /* darker than the light-theme footer */
+/* header quote link: keep the button's own colors over the navigation link styles */
+.navigation-links>li>a.navigation-quote.hover-btn,.navigation-links>li>a.navigation-quote.hover-btn:hover{
+  background:var(--hover-btn-bg);color:var(--hover-btn-ink);border-radius:999px;padding:12px 26px;
+}
+@media (prefers-reduced-motion:reduce){.hover-btn-label,.hover-btn-reveal,.hover-btn-dot{transition:none;}}

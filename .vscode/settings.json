@@ -1,0 +1,17 @@
+{
+  // iCloud Drive keeps re-downloading/evicting files in this folder; each touch made
+  // Live Server reload the page. Only reload for real code edits.
+  "liveServer.settings.ignoreFiles": [
+    ".vscode/**",
+    ".git/**",
+    "components/**",
+    "models/**",
+    "images/**",
+    "videos/**",
+    "assets/**/*.{png,jpg,jpeg,webp,gif,svg,mp4,m4v,woff,woff2}",
+    "**/*.glb",
+    "**/*.txt",
+    "**/*.md",
+    "dist/**"
+  ]
+}
