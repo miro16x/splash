@@ -1,0 +1,1881 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wrap Visualizer | Splash &amp; Dash</title>
+<link rel="icon" type="image/png" href="images/favicon-64.png" sizes="64x43">
+<meta name="description" content="Preview vinyl wrap colors and finishes on a vehicle in 3D before you commit. Splash &amp; Dash Car Wash &amp; Auto Detail Center, St. Thomas, U.S. Virgin Islands.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="theme-color" content="#07090c">
+<script>
+  // same choice as the rest of the site (assets/navigation.js); the visualizer defaults to dark
+  try { if (localStorage.getItem('splash-theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
+</script>
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://splashanddash.uluxe.site/wrap-visualizer.html">
+<meta property="og:image" content="https://splashanddash.uluxe.site/images/brand-logo-512.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Splash and Dash Car Wash and Auto Detail Center logo">
+<meta property="og:title" content="Wrap Visualizer | Splash &amp; Dash">
+<meta property="og:description" content="Preview vinyl wrap colors and finishes on a vehicle in 3D before you commit.">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://splashanddash.uluxe.site/images/brand-logo-512.png">
+<meta name="twitter:image:alt" content="Splash and Dash Car Wash and Auto Detail Center logo">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lobster&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&amp;family=Plus+Jakarta+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap">
+<style>
+  :root {
+    --bg: #07090c;
+    --ink: #eef2f6;
+    --muted: #97a3b2;
+    --line: rgba(255, 255, 255, .12);
+    --panel: rgba(11, 14, 19, .78);
+    --scrim: 7, 9, 12;             /* rgb of the top/bottom shading */
+    --lede: #c9d2dc;
+    --fill: rgba(255, 255, 255, .06);
+    --fill-strong: rgba(255, 255, 255, .18);
+    --text-shadow: 0 2px 24px rgba(0, 0, 0, .6);
+    --accent: #3FD8E8;
+    --accent-ink: #03121e;
+    --brand: #0A3B73;
+    --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+    --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  /* light mode: a white studio instead of the dark garage */
+  :root[data-theme="light"] {
+    --bg: #e9ecef;
+    --ink: #0f1720;
+    --muted: #4f5c6b;
+    --line: rgba(15, 23, 32, .14);
+    --panel: rgba(255, 255, 255, .82);
+    --scrim: 233, 236, 239;
+    --lede: #2d3946;
+    --fill: rgba(15, 23, 32, .05);
+    --fill-strong: rgba(15, 23, 32, .18);
+    --text-shadow: 0 2px 22px rgba(255, 255, 255, .85);
+    --accent: #0F8FA8;
+    --accent-ink: #ffffff;
+  }
+  :root[data-theme="light"] .wordmark { color: #0A3B73; background: linear-gradient(180deg, #1483B8 15%, #0A3B73 85%); background-clip: text; -webkit-background-clip: text; }
+  :root[data-theme="light"] .dots button:not([aria-current="true"]) { background: rgba(15, 23, 32, .22); }
+  :root[data-theme="light"] .hud .dot { border-color: rgba(15, 23, 32, .3); }
+  :root[data-theme="light"] .swatches button { outline-color: rgba(15, 23, 32, .25); }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); scroll-behavior: auto; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: inherit; }
+  .skip-link { position: absolute; left: -9999px; top: 8px; z-index: 30; background: var(--accent); color: var(--accent-ink); padding: .6rem 1rem; border-radius: 8px; font-weight: 700; }
+  .skip-link:focus { left: 8px; }
+
+  /* ---------- 3D stage ---------- */
+  #stage {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+    touch-action: pan-y;
+  }
+  .scrim {
+    position: fixed; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(to bottom, rgba(var(--scrim),.75) 0, rgba(var(--scrim),0) 18%),
+      linear-gradient(to top, rgba(var(--scrim),.6) 0, rgba(var(--scrim),0) 25%);
+  }
+
+  /* ---------- top bar + HUD ---------- */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 12px clamp(16px, 4vw, 48px);
+  }
+  .wordmark {
+    text-decoration: none; white-space: nowrap;
+    font-family: 'Lobster', 'Brush Script MT', cursive; font-size: 1.7rem; line-height: 1.35;
+    color: #8cddff; background: linear-gradient(180deg, #b9eeff 15%, #63c6ff 85%);
+    background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .wordmark span { font-size: .65em; }
+  .topbar nav { display: flex; align-items: center; gap: 1.25rem; font-size: .92rem; }
+  .topbar nav a.plain { text-decoration: none; color: var(--muted); }
+  .topbar nav a.plain:hover { color: var(--ink); }
+  .vehicle-pick select {
+    width: auto; max-width: 15rem; border-radius: 999px; text-overflow: ellipsis;
+    padding: .55rem 2.1rem .55rem .95rem; font-size: .85rem; font-weight: 600;
+    background-color: rgba(11, 14, 19, .6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .vehicle-pick select:hover { border-color: var(--fill-strong); }
+  :root[data-theme="light"] .vehicle-pick select { background-color: rgba(255, 255, 255, .7); }
+  .theme-btn {
+    display: grid; place-items: center; width: 38px; height: 38px; flex: none; padding: 0; cursor: pointer;
+    border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-size: 1.1rem; line-height: 1;
+  }
+  .theme-btn:hover { border-color: var(--fill-strong); }
+  .topbar .btn.small { gap: 0; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    background: var(--accent); color: var(--accent-ink);
+    font: 700 .95rem/1 var(--font-body); text-decoration: none;
+    padding: .8rem 1.15rem; border-radius: 999px; border: 0; cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(63,216,232,.25); }
+  .btn.small { padding: .6rem .95rem; font-size: .85rem; }
+
+  .hud {
+    position: fixed; z-index: 9; top: 76px; left: clamp(16px, 4vw, 48px);
+    display: flex; align-items: center; gap: .6rem;
+    background: var(--panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: .4rem .85rem .4rem .45rem; font-size: .82rem; font-weight: 600;
+    opacity: 0; transition: opacity .4s ease;
+  }
+  .hud.on { opacity: 1; }
+  .hud .dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); }
+  .hud .fin { color: var(--muted); font-weight: 500; }
+
+  /* free view: a button to look at the car from any angle */
+  .view-btn {
+    position: fixed; z-index: 9; top: 124px; left: clamp(16px, 4vw, 48px);
+    display: inline-flex; align-items: center; gap: .5rem;
+    background: var(--panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--line); border-radius: 999px; color: var(--ink);
+    padding: .5rem .9rem .5rem .7rem; font: 600 .82rem/1 var(--font-body); cursor: pointer;
+    transition: background .2s ease, border-color .2s ease;
+  }
+  .view-btn:hover { border-color: var(--fill-strong); }
+  .view-btn svg { width: 18px; height: 18px; flex: none; }
+  .view-btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  .view-hint {
+    position: fixed; z-index: 9; left: 50%; bottom: max(20px, env(safe-area-inset-bottom));
+    transform: translateX(-50%); margin: 0; white-space: nowrap;
+    background: var(--panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--line); border-radius: 999px; padding: .55rem 1rem;
+    font-size: .8rem; color: var(--muted);
+  }
+  .view-hint b { color: var(--ink); font-weight: 600; }
+  body.free-view main, body.free-view .dots { opacity: 0; visibility: hidden; }
+  main, .dots { transition: opacity .3s ease, visibility .3s; }
+
+  .dots {
+    position: fixed; z-index: 9; right: clamp(12px, 2vw, 28px); top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .dots button {
+    width: 10px; height: 10px; padding: 0; border-radius: 50%; cursor: pointer;
+    background: rgba(255,255,255,.22); border: 0; transition: background .2s, transform .2s;
+  }
+  .dots button[aria-current="true"] { background: var(--accent); transform: scale(1.35); }
+
+  /* ---------- chapters ---------- */
+  main { position: relative; z-index: 5; }
+  .chapter {
+    position: relative; min-height: 150vh;
+    display: flex; align-items: center;
+    padding: 0 clamp(20px, 7vw, 110px);
+    pointer-events: none;
+  }
+  .chapter.right { justify-content: flex-end; }
+  .chapter.hero { min-height: 100vh; min-height: 100svh; align-items: flex-end; padding-bottom: 12vh; }
+  .card { pointer-events: auto; max-width: 34rem; text-shadow: var(--text-shadow); }
+  .eyebrow {
+    margin: 0 0 .9rem; font-family: var(--font-mono); font-size: .78rem; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  h1, h2 {
+    margin: 0; font-family: var(--font-display); font-weight: 600;
+    line-height: 1.02; letter-spacing: -.015em; text-wrap: balance;
+  }
+  h1 { font-size: clamp(2.6rem, 6vw, 5rem); }
+  h2 { font-size: clamp(2.2rem, 5.2vw, 4.4rem); }
+  .card p.lede { margin: 1.1rem 0 0; font-size: clamp(1rem, 1.3vw, 1.15rem); line-height: 1.55; color: var(--lede); max-width: 26rem; }
+  .cue { margin-top: 2rem; display: flex; align-items: center; gap: .6rem; font-size: .85rem; color: var(--muted); }
+  .cue i { width: 1px; height: 36px; background: linear-gradient(var(--accent), transparent); animation: cue 1.8s ease-in-out infinite; }
+  @keyframes cue { 0%,100% { transform: scaleY(.4); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } }
+
+  /* ---------- configurator ---------- */
+  .chapter.config { min-height: 100vh; min-height: 100svh; justify-content: flex-end; padding-top: 76px; padding-bottom: 20px; }
+  .panel {
+    width: min(390px, 100%); max-width: none;
+    background: var(--panel); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--line); border-radius: 22px;
+    --pad-x: 22px;
+    padding: 0; text-shadow: none;
+    max-height: calc(100svh - 96px); overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .panel-body { padding: 22px var(--pad-x) 1rem; overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
+  .panel h2 { font-size: clamp(1.9rem, 3vw, 2.6rem); }
+  .group { margin-top: 1.25rem; }
+  .label { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted); margin-bottom: .55rem; }
+  .label b { color: var(--ink); font-weight: 600; }
+  select {
+    width: 100%; appearance: none; -webkit-appearance: none;
+    background: var(--fill) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2397a3b2' stroke-width='1.6' fill='none'/%3E%3C/svg%3E") no-repeat right 14px center;
+    color: var(--ink); border: 1px solid var(--line); border-radius: 12px;
+    padding: .7rem 2.2rem .7rem .85rem; font: 500 .95rem var(--font-body);
+  }
+  select option { color: #111; }
+  .swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 9px; }
+  .swatches button {
+    aspect-ratio: 1; border-radius: 50%; cursor: pointer; padding: 0;
+    border: 2px solid transparent; outline: 1px solid rgba(255,255,255,.25); outline-offset: -1px;
+    transition: transform .15s ease;
+  }
+  .swatches button:hover { transform: scale(1.08); }
+  .swatches button[aria-checked="true"] { border-color: var(--bg); outline: 2px solid var(--accent); outline-offset: 1px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .seg button {
+    flex: 1 1 auto; cursor: pointer;
+    background: var(--fill); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: .55rem .6rem; font: 600 .8rem var(--font-body);
+  }
+  .seg button[aria-checked="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .toggle { display: flex; align-items: center; justify-content: space-between; margin-top: 1.1rem; font-size: .9rem; cursor: pointer; }
+  .toggle .note { display: block; margin-top: .15rem; font-size: .72rem; color: var(--muted); }
+  .toggle .note[hidden] { display: none; }
+  .toggle input { appearance: none; -webkit-appearance: none; width: 42px; height: 24px; border-radius: 99px; background: var(--fill-strong); position: relative; cursor: pointer; transition: background .2s; margin: 0; }
+  .toggle input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .toggle input:checked { background: var(--accent); }
+  .toggle input:checked::after { transform: translateX(18px); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips button {
+    cursor: pointer; display: inline-flex; align-items: baseline; gap: .4rem;
+    background: var(--fill); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: .45rem .75rem; font: 600 .78rem var(--font-body);
+  }
+  .chips button small { font-weight: 500; color: var(--muted); }
+  .chips button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .chips button[aria-pressed="true"] small { color: var(--accent-ink); opacity: .75; }
+  .chips button:disabled { opacity: .35; cursor: not-allowed; }
+  .swatches.base { grid-template-columns: repeat(6, 1fr); }
+  /* price + quote button stay pinned to the bottom of the panel while the options scroll */
+  .panel-foot { flex: none; padding: .9rem var(--pad-x) 22px; border-top: 1px solid var(--line); }
+  .estimate .price { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: .85rem; color: var(--muted); }
+  .estimate .price b { font-family: var(--font-display); font-size: 1.35rem; font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .estimate .extras { margin: .35rem 0 0; font-size: .75rem; line-height: 1.5; color: var(--muted); }
+  .panel .btn { width: 100%; margin-top: .8rem; padding: .95rem; }
+  .fine { margin: .85rem 0 0; font-size: .75rem; line-height: 1.5; color: var(--muted); }
+  .fine a { color: var(--accent); }
+
+  /* ---------- loader + fallback ---------- */
+  .loader {
+    position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
+    background: var(--bg); transition: opacity .6s ease, visibility .6s;
+  }
+  .loader.done { opacity: 0; visibility: hidden; }
+  .loader .bar { width: 180px; height: 2px; background: var(--line); margin-top: 14px; overflow: hidden; border-radius: 2px; }
+  .loader .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  .loader p { margin: 0; font-family: var(--font-mono); font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-align: center; }
+  .fallback { display: none; margin-top: 1.2rem; font-size: .95rem; color: var(--lede); }
+  .no-webgl #stage, .no-webgl .hud, .no-webgl .loader, .no-webgl .dots, .no-webgl .cue, .no-webgl main > .chapter:not(.hero) { display: none; }
+  .no-webgl .fallback { display: block; }
+  .no-webgl .chapter.hero { min-height: 100vh; min-height: 100svh; align-items: center; }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  /* ---------- phone layout ---------- */
+  @media (max-width: 760px) {
+    .topbar nav a.plain { display: none; }
+    .topbar { gap: .5rem; }
+    .topbar nav { gap: .5rem; }
+    .topbar .btn.small .long { display: none; }
+    .vehicle-pick select { max-width: 9.5rem; padding: .5rem 1.8rem .5rem .75rem; font-size: .8rem; background-position: right 10px center; }
+    .wordmark { font-size: clamp(1.3rem, 5.5vw, 1.7rem); }
+    .hud { top: 64px; }
+    .dots { display: none; }
+    .chapter, .chapter.right { justify-content: flex-start; align-items: flex-end; padding: 0 16px 9vh; min-height: 130vh; }
+    .chapter.hero { padding-bottom: 8vh; }
+    .scrim { background:
+      linear-gradient(to bottom, rgba(var(--scrim),.75) 0, rgba(var(--scrim),0) 14%),
+      linear-gradient(to top, rgba(var(--scrim),.92) 0, rgba(var(--scrim),.55) 32%, rgba(var(--scrim),0) 52%); }
+    .chapter.config { align-items: flex-end; padding: 0; }
+    .panel { width: 100%; border-radius: 22px 22px 0 0; --pad-x: 16px; border-bottom: 0; max-height: 58svh; }
+    .panel-body { padding-top: 18px; }
+    .panel-foot { padding-bottom: 16px; }
+    .panel h2 { font-size: 1.6rem; }
+    .group { margin-top: .9rem; }
+    .swatches { gap: 8px; }
+    .panel .fine { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cue i { animation: none; }
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<a class="skip-link" href="#try">Skip to the wrap builder</a>
+
+<canvas id="stage" aria-label="3D preview of a wrapped vehicle"></canvas>
+<div class="scrim" aria-hidden="true"></div>
+
+<div class="loader" id="loader" role="status">
+  <div>
+    <p id="loaderText">Pulling into the bay…</p>
+    <div class="bar"><i id="loaderBar"></i></div>
+  </div>
+</div>
+
+<header class="topbar">
+  <a class="wordmark" href="index.html" aria-label="Splash and Dash home">Splash <span>and</span> Dash</a>
+  <nav aria-label="Primary navigation">
+    <label class="vehicle-pick" id="headerModelWrap"><span class="sr-only">Vehicle</span><select id="headerModel"></select></label>
+    <a class="plain" href="vinyl-wraps.html">Vinyl Wraps</a>
+    <a class="plain" href="gallery.html">Gallery</a>
+    <a class="btn small" href="quote.html?service=vinyl"><span class="long">Request a&nbsp;</span>Quote</a>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Switch to light mode" aria-pressed="false">◐</button>
+  </nav>
+</header>
+
+<div class="hud" id="hud" aria-live="polite">
+  <span class="dot" id="hudDot"></span>
+  <span id="hudName">Gloss Black</span>
+  <span class="fin" id="hudFin">Gloss</span>
+</div>
+
+<button class="view-btn" id="freeViewBtn" type="button" aria-pressed="false">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 4 0 1 1-4-3.3"/><path d="M17 5.5 17.3 9l-3.4.6"/><path d="M12 3v18"/></svg>
+  <span id="freeViewLabel">Free view</span>
+</button>
+<p class="view-hint" id="freeViewHint" hidden><b>Drag</b> to turn · <b>scroll</b> or <b>pinch</b> to zoom · <b>Esc</b> to exit</p>
+<nav class="dots" id="dots" aria-label="Sections"></nav>
+
+<main id="main">
+  <!--
+    Each chapter drives the 3D scene while it's on screen:
+      data-look   = swatch id from SWATCHES below ("custom" = the configurator's selection)
+      data-chrome = "delete" to black out the chrome trim
+      data-panels = partial wrap: panel ids from PANELS below; everything else shows data-base (a swatch id) as the paint
+      data-az / data-el / data-dist / data-ty = camera angle around the car (degrees), height angle, distance, look-at height
+      data-side   = where the text sits (left/right) so the car slides to the other side
+  -->
+  <section class="chapter hero" data-chapter data-label="Intro" data-look="gloss-black" data-az="32" data-el="7" data-dist="7.4" data-ty="0.55" data-side="left">
+    <div class="card">
+      <p class="eyebrow">Vinyl wrap visualizer</p>
+      <h1>See it before<br>you wrap it.</h1>
+      <p class="lede">Scroll through a few of our favorite looks, then try any color and finish on the whole car or just the panels you want.</p>
+      <p class="fallback">Your browser can't show the 3D preview. Take a look at finished wraps in our <a href="gallery.html">gallery</a>, try the <a href="vinyl-wraps.html#visualizer">wrap price estimator</a>, or <a href="quote.html?service=vinyl">request a wrap quote</a>.</p>
+      <div class="cue"><i></i>Scroll to explore</div>
+    </div>
+  </section>
+
+  <section class="chapter right" data-chapter data-label="Satin Black" data-look="satin-black" data-az="88" data-el="4" data-dist="8.8" data-ty="0.5" data-side="right">
+    <div class="card">
+      <p class="eyebrow">01 · Satin</p>
+      <h2>Stealth mode.</h2>
+      <p class="lede">Satin Black takes the shine off without going flat. It reads dark and clean from every angle, and it hides light swirls better than gloss.</p>
+    </div>
+  </section>
+
+  <section class="chapter" data-chapter data-label="Nardo Gray" data-look="nardo-gray" data-az="152" data-el="10" data-dist="8.6" data-ty="0.5" data-side="left">
+    <div class="card">
+      <p class="eyebrow">02 · Gloss</p>
+      <h2>The cement look.</h2>
+      <p class="lede">Nardo Gray is a solid, no-flake gray that makes every body line look sharper. Understated, but people notice.</p>
+    </div>
+  </section>
+
+  <section class="chapter right" data-chapter data-label="Candy Red" data-look="candy-red" data-az="212" data-el="5" data-dist="7.8" data-ty="0.45" data-side="right">
+    <div class="card">
+      <p class="eyebrow">03 · Metallic</p>
+      <h2>Loud on purpose.</h2>
+      <p class="lede">Candy Red has metallic flake under a deep gloss layer. It goes almost black in the shade and lights up in direct sun.</p>
+    </div>
+  </section>
+
+  <section class="chapter" data-chapter data-label="Color shift" data-look="midnight-shift" data-az="300" data-el="16" data-dist="9" data-ty="0.45" data-side="left">
+    <div class="card">
+      <p class="eyebrow">04 · Color shift</p>
+      <h2>A different color from every angle.</h2>
+      <p class="lede">Color-shift film moves between purple, blue and green as the light hits it. Keep scrolling and watch it turn.</p>
+    </div>
+  </section>
+
+  <section class="chapter right" data-chapter data-label="Partial wrap" data-look="gloss-black" data-base="chalk-white" data-panels="hood,mirrors,spoiler,roof" data-az="398" data-el="24" data-dist="10" data-ty="0.45" data-side="right">
+    <div class="card">
+      <p class="eyebrow">05 · Partial wrap</p>
+      <h2>Two-tone, panel by panel.</h2>
+      <p class="lede">You don't have to wrap the whole car. Gloss Black on the hood, roof, mirrors and spoiler turns a white car into something else. Accent packages start at $650.</p>
+    </div>
+  </section>
+
+  <section class="chapter" data-chapter data-label="Chrome delete" data-look="chalk-white" data-chrome="delete" data-az="378" data-el="6" data-dist="7.4" data-ty="0.55" data-side="left">
+    <div class="card">
+      <p class="eyebrow">06 · Chrome delete</p>
+      <h2>Lose the chrome.</h2>
+      <p class="lede">Window trim, badges and grilles covered in black. It's a quick way to modernize a car without a full color change.</p>
+    </div>
+  </section>
+
+  <section class="chapter config" id="try" data-chapter data-label="Try it on" data-look="custom" data-az="400" data-el="12" data-dist="9.2" data-ty="0.5" data-side="config">
+    <div class="card panel">
+      <div class="panel-body">
+      <p class="eyebrow">Try it on</p>
+      <h2>Build your wrap.</h2>
+
+      <div class="group" id="modelGroup">
+        <label class="label" for="modelSelect"><span>Vehicle</span></label>
+        <select id="modelSelect"></select>
+      </div>
+
+      <div class="group">
+        <div class="label"><span>Color</span><b id="colorName"></b></div>
+        <div class="swatches" id="swatches" role="radiogroup" aria-label="Wrap color"></div>
+      </div>
+
+      <div class="group">
+        <div class="label"><span>Finish</span></div>
+        <div class="seg" id="finishes" role="radiogroup" aria-label="Finish"></div>
+      </div>
+
+      <div class="group">
+        <div class="label"><span>Coverage</span></div>
+        <div class="seg" id="coverage" role="radiogroup" aria-label="Coverage">
+          <button type="button" role="radio" data-coverage="full">Full color change</button>
+          <button type="button" role="radio" data-coverage="partial">Partial wrap</button>
+        </div>
+      </div>
+
+      <div id="partialGroup" hidden>
+        <div class="group">
+          <label class="label" for="packageSelect"><span>Accent package</span></label>
+          <select id="packageSelect"><option value="">Custom panels</option></select>
+        </div>
+        <div class="group">
+          <div class="label"><span>Panels</span><b id="panelCount"></b></div>
+          <div class="chips" id="panelChips" role="group" aria-label="Panels to wrap"></div>
+        </div>
+        <div class="group">
+          <div class="label"><span>Your current paint</span><b id="baseName"></b></div>
+          <div class="swatches base" id="baseSwatches" role="radiogroup" aria-label="Current paint color"></div>
+        </div>
+      </div>
+
+      <label class="toggle"><span>Chrome delete <small class="note" id="chromeNote" hidden>Added to your quote, not shown on this model</small></span><input type="checkbox" id="chromeToggle"></label>
+
+      <p class="fine">Drag the car to look around. Screen colors are a preview. We'll show you real film samples before anything goes on your vehicle. Prices are starting points from our <a href="vinyl-wraps.html">wrap price list</a>.</p>
+      </div>
+
+      <div class="panel-foot">
+        <div class="estimate" aria-live="polite">
+          <div class="price"><span id="estimateLabel"></span><b id="estimatePrice"></b></div>
+          <p class="extras" id="estimateExtras"></p>
+        </div>
+        <a class="btn" id="quoteBtn" href="quote.html?service=vinyl">Request a quote for this look</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  // If three.js can't load (CDN blocked, old browser), show the fallback instead of an endless loader.
+  // A slow vehicle download is fine; a failed one is handled inside loadModel.
+  setTimeout(function(){
+    if (!window.__wrapStarted) document.body.classList.add('no-webgl');
+  }, 15000);
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Reflector } from 'three/addons/objects/Reflector.js';
+
+window.__wrapStarted = true;
+
+/* =====================================================================
+   1. YOUR VEHICLES
+   Add one entry per .glb file. The visualizer recolors any part whose
+   MATERIAL name (or mesh name) is listed in `paint`, and treats parts
+   listed in `chrome` as the trim for chrome delete. Parts in `glass`
+   get a dark tinted glass so windows don't render as solid gray.
+   `qType` must match one of the vehicle types on the quote form
+   (see VEHICLE_TYPES in assets/site.js) so it fills in automatically.
+   Not sure of the names? Load the page and open the browser console:
+   every model's material names are printed there.
+
+   One-piece textured models (e.g. Meshy AI, where paint, glass, tires
+   and lights are all one mesh and one texture): set `paintFromTexture`
+   and make the car white in the texture. Pixels that are bright and
+   untinted count as paint and take the wrap; everything else keeps its
+   texture. `paintMin` (0–1, default .62) is how bright a pixel must be,
+   `paintTint` (default .05) how much color tint the white may have (raise it
+   for a bluish or warm white), and `paintRef` (default .85) how bright the
+   plain paint is in the texture.
+   Glass: dark pixels above the window line are drawn as clean, smooth glass
+   with an even light tint instead of the streaky AI texture. Tune with
+   `glass: { dark: .4, detail: .15, soft: .2, tint: 0x3f4549 }` (soft = how blurry its reflections are; dark = how dark a pixel must be,
+   detail = how much of the texture, e.g. painted-in seats, still shows
+   through, tint = the glass color, rearFacing: false = nothing facing straight back is glass, for sedans
+   whose tail lamps sit above the window line) or turn it off with `glass: false`.
+   Wavy AI glass can also be smoothed in the .glb itself (see scratch glass_smooth.py).
+   `smoothPaint: 1` drops the texture's bump map on the paint and draws the
+   panel seams as a darker shade of the wrap color. Use it on models whose
+   paint looks crumpled, together with a smoothed .glb (see scratch smooth.py).
+   `paintZones` lists panels that are all paint even though the texture
+   isn't white there (e.g. black mirror caps): ['mirrors'].
+   `wheels: [rear axle, front axle, axle height, rim radius]` keeps bright
+   silver wheels from counting as paint. Axles are lengthwise positions
+   (0 rear – 1 nose), height is 0–1 of the car's height, and the radius
+   is a share of the car's length (about .055 for a sedan).
+
+   Partial wraps: the paint is split into panels (hood, roof, doors…)
+   by where each part sits on the car, so it works even when the model's
+   paint is one big material. Open the page with ?debug=zones to see every
+   panel in its own color, then fine-tune a model with `zones: { … }`
+   using any of the keys in ZONE_DEFAULTS below.
+   ===================================================================== */
+// Shared panel layouts by body style; each vehicle adds its own window line and mirror position.
+// All the Meshy models below come in nose → −x, so rotateY: 90 turns the front to the camera, and
+// most have black mirror caps in the texture, hence paintZones: ['mirrors'].
+const SEDAN = { doors: 4, rearDoorSplit: .47, doorRear: .3 };
+const SUV = { doors: 4, liftgate: true, hood: .7, deck: .06, doorRear: .32, rearDoorSplit: .5, bumperTop: .4, spoiler: [0, .08, .85] };
+const PICKUP = { doors: 4, liftgate: true, hood: .7, deck: .4, doorRear: .42, rearDoorSplit: .56, bumperTop: .35, spoiler: [0, 0, 2] };
+const MODELS = [
+  {
+    id: 'mustang',
+    label: 'Ford Mustang',
+    qType: '2-Door Coupe',
+    url: 'models/mustang.glb',
+    paintFromTexture: true,
+    smoothPaint: 1,     // smoothed .glb: no AI bump map on the paint, darker seams
+    rotateY: 90,        // degrees, so the front of the car faces the camera at the start
+    zones: { belt: .67, mirror: [.54, .62, .68, .86] },
+    paintZones: ['mirrors'],
+    wheels: [.242, .8, .244, .058],
+    glass: { detail: .08, soft: .2, tint: 0x46505a },   // medium tint; glass smoothed in the .glb
+  },
+  {
+    id: 'civic',
+    label: 'Honda Civic',
+    qType: 'Small Sedan',
+    url: 'models/civic.glb',
+    paintFromTexture: true,
+    smoothPaint: 1,     // smoothed .glb: no AI bump map on the paint, darker seams
+    rotateY: 90,
+    zones: { ...SEDAN, belt: .65, roof: .78, deck: .2, mirror: [.57, .66, .615, .855] },
+    paintZones: ['mirrors'],
+    wheels: [.203, .797, .221, .058],
+    glass: { detail: .08, soft: .2, tint: 0x46505a, rearFacing: false },   // medium tint; glass smoothed in the .glb
+  },
+  {
+    id: 'camry',
+    label: 'Toyota Camry',
+    qType: 'Large Sedan',
+    url: 'models/camry.glb',
+    paintFromTexture: true,
+    smoothPaint: 1,     // smoothed .glb: no AI bump map on the paint, darker seams
+    rotateY: 90,
+    zones: { ...SEDAN, belt: .65, roof: .8, deck: .24, mirror: [.59, .68, .615, .855] },
+    paintZones: ['mirrors'],
+    wheels: [.224, .795, .235, .065],
+    glass: { detail: .08, soft: .2, tint: 0x46505a, rearFacing: false },   // medium tint; glass smoothed in the .glb
+  },
+  {
+    id: 'wrangler',
+    label: 'Jeep Wrangler Rubicon',
+    qType: 'Small SUV/Crossover',   // 2-door
+    url: 'models/wrangler.glb',
+    paintFromTexture: true,
+    smoothPaint: 1,     // smoothed .glb: no AI bump map on the paint, darker seams
+    rotateY: 90,
+    zones: { ...SUV, doors: 2, doorRear: .45, hood: .66, belt: .65, mirror: [.5, .59, .66, .86] },
+    paintZones: ['mirrors', 'roof'],   // black hardtop in the texture
+    wheels: [.23, .832, .207, .074],
+    glass: { detail: .08, soft: .2, tint: 0x46505a },   // medium tint; glass smoothed in the .glb
+  },
+  {
+    id: 'durango',
+    label: 'Dodge Durango',
+    qType: 'Mid-Size SUV',
+    url: 'models/durango.glb',
+    paintFromTexture: true,
+    smoothPaint: 1,     // smoothed .glb: no AI bump map on the paint, darker seams
+    rotateY: 90,
+    zones: { ...SUV, belt: .67, mirror: [.59, .68, .65, .86] },
+    paintZones: ['mirrors', 'roof'],   // black roof in the texture
+    wheels: [.217, .815, .233, .07],
+    glass: { detail: .08, soft: .2, tint: 0x46505a },   // medium tint; glass smoothed in the .glb
+  },
+  {
+    id: 'armada',
+    label: 'Nissan Armada',
+    qType: 'Large SUV',
+    url: 'models/armada.glb',
+    paintFromTexture: true,
+    smoothPaint: 1,     // smoothed .glb: no AI bump map on the paint, darker seams
+    rotateY: 90,
+    zones: { ...SUV, belt: .62, mirror: [.6, .68, .6, .86] },
+    paintZones: ['mirrors'],
+    wheels: [.233, .814, .206, .067],
+    glass: { detail: .08, soft: .2, tint: 0x46505a },   // medium tint; glass smoothed in the .glb
+  },
+  {
+    id: 'maverick',
+    label: 'Ford Maverick',
+    qType: 'Small Pickup',
+    url: 'models/maverick.glb',
+    paintFromTexture: true,
+    smoothPaint: 1,     // smoothed .glb: no AI bump map on the paint, darker seams
+    rotateY: 90,
+    zones: { ...PICKUP, belt: .55, mirror: [.63, .71, .58, .86] },
+    paintZones: ['mirrors'],
+    wheels: [.224, .827, .22, .061],
+    glass: { detail: .08, soft: .2, tint: 0x46505a },   // medium tint; glass smoothed in the .glb
+    paintMin: .5, paintTint: .12, paintRef: .65,   // its white is darker and bluish
+  },
+  {
+    id: 'tacoma',
+    label: 'Toyota Tacoma',
+    qType: 'Mid-Size Pickup',
+    url: 'models/tacoma.glb',
+    paintFromTexture: true,
+    smoothPaint: 1,     // smoothed .glb: no AI bump map on the paint, darker seams
+    rotateY: 90,
+    zones: { ...PICKUP, belt: .6, mirror: [.62, .7, .68, .86] },
+    paintZones: ['mirrors'],
+    wheels: [.219, .834, .2, .06],
+    glass: { detail: .08, soft: .2, tint: 0x46505a },   // medium tint; glass smoothed in the .glb
+  },
+  {
+    id: 'f150',
+    label: 'Ford F-150',
+    qType: 'Full-Size Pickup',
+    url: 'models/f150.glb',
+    paintFromTexture: true,
+    smoothPaint: 1,     // smoothed .glb: no AI bump map on the paint, darker seams
+    rotateY: 90,
+    zones: { ...PICKUP, belt: .58, mirror: [.64, .72, .58, .86] },
+    paintZones: ['mirrors'],
+    wheels: [.216, .84, .202, .061],
+    glass: { detail: .08, soft: .2, tint: 0x46505a },   // medium tint; glass smoothed in the .glb
+  },
+  {
+    id: 'suburban',
+    label: 'Chevrolet Suburban',
+    qType: 'Large Truck/SUV',
+    url: 'models/suburban.glb',
+    paintFromTexture: true,
+    smoothPaint: 1,     // smoothed .glb: no AI bump map on the paint, darker seams
+    rotateY: 90,
+    // extra-long body: the doors sit further forward, with a long rear quarter behind them
+    zones: { ...SUV, hood: .72, rearDoorSplit: .6, doorRear: .44, belt: .69, mirror: [.64, .72, .67, .86] },
+    paintZones: ['mirrors'],
+    paintTint: .12, paintRef: .9,   // its white is brighter and slightly bluish
+    wheels: [.236, .829, .19, .06],
+    glass: { detail: .08, soft: .2, tint: 0x46505a },   // medium tint; glass smoothed in the .glb
+  },
+  {
+    id: 'sprinter',
+    label: 'Mercedes-Benz Sprinter',
+    qType: 'Van/Commercial',
+    url: 'models/sprinter.glb',
+    paintFromTexture: true,
+    smoothPaint: 1,     // smoothed .glb: no AI bump map on the paint, darker seams
+    rotateY: 90,
+    // short hood; "rear doors" are the sliding door, the rear cargo doors are the liftgate
+    zones: { ...SUV, hood: .86, frontBumper: .95, bumperTop: .3, doorRear: .45, rearDoorSplit: .7, deck: .05, belt: .46, spoiler: [0, .08, .9], mirror: [.74, .82, .5, .86] },
+    paintZones: ['mirrors'],
+    wheels: [.223, .846, .14, .05],
+    glass: { detail: .08, soft: .2, tint: 0x46505a },   // medium tint; glass smoothed in the .glb
+  },
+  // {
+  //   id: 'g-wagon',
+  //   label: 'Mercedes G-Class',
+  //   qType: 'Large SUV',
+  //   url: 'models/g-class.glb',
+  //   paint: ['Paint', 'Body'],
+  //   chrome: ['Chrome'],
+  //   glass: ['Glass'],
+  //   rotateY: 0,
+  //   zones: { doors: 4, belt: .55, roof: .9 }
+  // },
+];
+
+// Where each panel sits. Positions run 0–1: lengthwise 0 = rear, 1 = nose;
+// height 0 = ground, 1 = top; sideways 0 = centerline, 1 = widest point.
+const ZONE_DEFAULTS = {
+  front: '+z',          // direction the nose points after rotateY: '+z', '-z', '+x' or '-x'
+  doors: 2,             // 4 adds the rear doors (and the "Four Doors" panel)
+  belt: .6,             // height where the side windows start
+  roof: .86,            // top-facing surfaces above this height are roof
+  hood: .66,            // lengthwise: the hood and front fenders start here
+  hoodWidth: .74,       // top-facing surfaces narrower than this are hood/trunk, wider ones are fenders/quarters
+  doorRear: .38,        // lengthwise: the doors end and the quarter panels start here
+  rearDoorSplit: .52,   // four-door cars only: split between front and rear doors
+  deck: .28,            // lengthwise: the trunk lid starts behind this
+  frontBumper: .9,      // lengthwise: the front bumper starts here
+  rearBumper: .08,      // lengthwise: the rear bumper ends here
+  bumperTop: .5,        // bumpers stop at this height (above it is hood/trunk)
+  spoiler: [0, .08, .6],          // lengthwise from, to, and minimum height
+  mirror: [.52, .66, .62, .8],    // lengthwise from, to, minimum height, minimum sideways
+  rocker: .2,           // below this height between the wheels is the rocker panel (full wraps only)
+  liftgate: false,      // true for SUVs, pickups and vans: the upright rear above the bumper is the liftgate/tailgate
+};
+
+/* =====================================================================
+   2. FINISHES AND COLORS
+   Swap these for the film lines you actually stock.
+   ===================================================================== */
+const FINISHES = {
+  gloss:    { label: 'Gloss',       roughness: .2,  metalness: .05, clearcoat: 1,   clearcoatRoughness: .03, iridescence: 0, upcharge: '' },
+  metallic: { label: 'Metallic',    roughness: .34, metalness: .7,  clearcoat: 1,   clearcoatRoughness: .03, iridescence: 0, upcharge: '$200–$400' },
+  satin:    { label: 'Satin',       roughness: .5,  metalness: .2,  clearcoat: .25, clearcoatRoughness: .5,  iridescence: 0, upcharge: '$200–$400' },
+  matte:    { label: 'Matte',       roughness: .88, metalness: 0,   clearcoat: 0,   clearcoatRoughness: 1,   iridescence: 0, upcharge: '$200–$400' },
+  chrome:   { label: 'Chrome',      roughness: .05, metalness: 1,   clearcoat: .3,  clearcoatRoughness: .05, iridescence: 0, upcharge: 'quoted individually' },
+  shift:    { label: 'Color shift', roughness: .22, metalness: .8,  clearcoat: 1,   clearcoatRoughness: .03, iridescence: 1, upcharge: '$400–$700' },
+};
+
+const SWATCHES = [
+  { id: 'satin-black',     name: 'Satin Black',     hex: '#141517', finish: 'satin' },
+  { id: 'gloss-black',     name: 'Gloss Black',     hex: '#0c0c0d', finish: 'gloss' },
+  { id: 'matte-black',     name: 'Matte Black',     hex: '#18191b', finish: 'matte' },
+  { id: 'nardo-gray',      name: 'Nardo Gray',      hex: '#80848a', finish: 'gloss' },
+  { id: 'satin-dark-gray', name: 'Satin Dark Gray', hex: '#3b3e43', finish: 'satin' },
+  { id: 'chalk-white',     name: 'Chalk White',     hex: '#e9e7e1', finish: 'gloss' },
+  { id: 'candy-red',       name: 'Candy Red',       hex: '#a1070f', finish: 'metallic' },
+  { id: 'miami-blue',      name: 'Miami Blue',      hex: '#1aa7dc', finish: 'gloss' },
+  { id: 'racing-green',    name: 'Racing Green',    hex: '#0f3d28', finish: 'metallic' },
+  { id: 'desert-sand',     name: 'Desert Sand',     hex: '#b8a083', finish: 'satin' },
+  { id: 'midnight-shift',  name: 'Midnight Purple', hex: '#3a1784', finish: 'shift',
+    swatchCss: 'conic-gradient(from 200deg, #2c0c62, #1b3fa8, #0f8a72, #2c0c62)' },
+  { id: 'liquid-chrome',   name: 'Liquid Chrome',   hex: '#dfe3e8', finish: 'chrome',
+    swatchCss: 'linear-gradient(135deg, #f4f6f8, #8d949c 45%, #f4f6f8 60%, #6e757d)' },
+];
+
+// The car's current paint, shown on every panel that isn't wrapped
+const BASE_COLORS = [
+  { id: 'white',  name: 'White',  hex: '#e4e4e1', finish: 'gloss' },
+  { id: 'silver', name: 'Silver', hex: '#b3b7bc', finish: 'metallic' },
+  { id: 'gray',   name: 'Gray',   hex: '#4f5358', finish: 'metallic' },
+  { id: 'black',  name: 'Black',  hex: '#0d0e0f', finish: 'gloss' },
+  { id: 'red',    name: 'Red',    hex: '#9a1118', finish: 'gloss' },
+  { id: 'blue',   name: 'Blue',   hex: '#1a3f7c', finish: 'metallic' },
+];
+
+/* =====================================================================
+   3. PANELS, PACKAGES AND STARTING PRICES
+   Keep these in sync with PARTIAL_WRAP / FULL_WRAP in assets/site.js
+   and the accent packages on vinyl-wraps.html.
+   `view` is the camera angle used to show the panel: [around the car, height] in degrees
+   (0 = from the front, 90 = from the side, 180 = from the rear).
+   ===================================================================== */
+const PANELS = [
+  { id: 'roof',        name: 'Roof',                  short: 'Roof',           price: 450, zones: ['roof'],                      view: [30, 50] },
+  { id: 'hood',        name: 'Hood',                  short: 'Hood',           price: 400, zones: ['hood'],                      view: [12, 32] },
+  { id: 'trunk',       name: 'Trunk/Liftgate',        short: 'Trunk',          price: 400, zones: ['trunk'],                     view: [165, 38] },
+  { id: 'spoiler',     name: 'Spoiler',               short: 'Spoiler',        price: 250, zones: ['spoiler'],                   view: [200, 22] },
+  { id: 'mirrors',     name: 'Mirror Caps - Pair',    short: 'Mirror caps',    price: 300, zones: ['mirrors'],                   view: [38, 14] },
+  { id: 'doors2',      name: 'Two Doors',             short: 'Two doors',      price: 600, zones: ['frontDoors'],                view: [90, 8] },
+  { id: 'doors4',      name: 'Four Doors',            short: 'Four doors',     price: 950, zones: ['frontDoors', 'rearDoors'],   view: [90, 8] },
+  { id: 'fenders',     name: 'Fenders - Pair',        short: 'Fenders',        price: 550, zones: ['fenders'],                   view: [55, 10] },
+  { id: 'quarters',    name: 'Quarter Panels - Pair', short: 'Quarter panels', price: 650, zones: ['quarters'],                  view: [128, 12] },
+  { id: 'frontBumper', name: 'Front Bumper',          short: 'Front bumper',   price: 550, zones: ['frontBumper'],               view: [18, 6] },
+  { id: 'rearBumper',  name: 'Rear Bumper',           short: 'Rear bumper',    price: 550, zones: ['rearBumper'],                view: [195, 6] },
+  { id: 'bumpers',     name: 'Both Bumpers',          short: 'Both bumpers',   price: 950, zones: ['frontBumper', 'rearBumper'], view: [18, 6] },
+  { id: 'pillars',     name: 'A/B/C Pillars',         short: 'Pillars',        price: 200, zones: ['pillars'],                   view: [70, 24] },
+];
+
+const PACKAGES = [
+  { id: 'roof-package', name: 'Roof Package',       price: 650,  panels: ['roof', 'mirrors'] },
+  { id: 'sport',        name: 'Sport Package',      price: 750,  panels: ['roof', 'hood'] },
+  { id: 'blackout',     name: 'Blackout Package',   price: 950,  panels: ['roof', 'mirrors'], chrome: true },
+  { id: 'aggressive',   name: 'Aggressive Package', price: 1050, panels: ['roof', 'hood', 'mirrors', 'spoiler'] },
+  { id: 'triple',       name: 'Triple Package',     price: 1100, panels: ['roof', 'hood', 'trunk'] },
+  { id: 'full-front',   name: 'Full Front',         price: 1200, panels: ['hood', 'frontBumper', 'fenders'] },
+  { id: 'front-plus',   name: 'Front-End Plus',     price: 1400, panels: ['hood', 'frontBumper', 'fenders', 'mirrors'] },
+  { id: 'accent',       name: 'Exterior Accent',    price: 1400, panels: ['roof', 'hood', 'mirrors', 'spoiler', 'trunk'] },
+];
+
+const FULL_WRAP = {
+  '2-Door Coupe': 2200, 'Small Sedan': 2400, 'Large Sedan': 2600, 'Small SUV/Crossover': 2600,
+  'Mid-Size SUV': 2800, 'Large SUV': 3100, 'Small Pickup': 2800, 'Mid-Size Pickup': 3000,
+  'Full-Size Pickup': 3300, 'Large Truck/SUV': 3500, 'Van/Commercial': 3500,
+};
+const CHROME_DELETE_PRICE = '$400–$600';
+
+const DEFAULT_SWATCH = 'nardo-gray';
+const DRACO_PATH = 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/libs/draco/gltf/';
+const CAR_LENGTH = 4.6;   // every model is scaled to this length so the cameras work for all of them
+
+/* ===================================================================== */
+
+const SW = Object.fromEntries(SWATCHES.map(s => [s.id, { ...s, color: new THREE.Color(s.hex) }]));
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const easeInOut = t => .5 - .5 * Math.cos(Math.PI * t);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DEBUG_ZONES = new URLSearchParams(location.search).get('debug') === 'zones';
+
+const BASE = Object.fromEntries(BASE_COLORS.map(b => [b.id, { ...b, color: new THREE.Color(b.hex) }]));
+const PANEL = Object.fromEntries(PANELS.map(p => [p.id, p]));
+const ZONES = ['roof', 'hood', 'trunk', 'spoiler', 'mirrors', 'frontDoors', 'rearDoors', 'fenders', 'quarters', 'frontBumper', 'rearBumper', 'pillars', 'other'];
+const zonesFor = ids => new Set(ids.flatMap(id => PANEL[id]?.zones || []));
+const money = n => '$' + n.toLocaleString('en-US');
+
+const sel = {
+  model: MODELS[0].id, swatch: DEFAULT_SWATCH, finish: null, chrome: false,
+  coverage: 'full', panels: new Set(['roof', 'hood']), base: 'white', mask: null,
+};
+let hudKey = '';
+let zoneCounts = null;   // triangles per zone on the loaded vehicle; null until it loads
+
+/* ---------- UI: chapters, dots, configurator ---------- */
+const chapters = [...document.querySelectorAll('[data-chapter]')].map(el => ({
+  el,
+  label: el.dataset.label,
+  look: el.dataset.look,
+  base: el.dataset.base || null,
+  mask: el.dataset.panels ? zonesFor(el.dataset.panels.split(',')) : null,
+  chrome: el.dataset.chrome === 'delete',
+  az: +el.dataset.az, elev: +el.dataset.el, dist: +el.dataset.dist, ty: +el.dataset.ty,
+  side: el.dataset.side || 'center',
+}));
+const LAST = chapters.length - 1;
+
+const dotsEl = document.getElementById('dots');
+chapters.forEach((c, k) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.setAttribute('aria-label', c.label);
+  b.addEventListener('click', () => scrollTo({ top: anchors[k], behavior: reduceMotion ? 'auto' : 'smooth' }));
+  dotsEl.appendChild(b);
+});
+
+const modelSelect = document.getElementById('modelSelect');
+MODELS.forEach(m => modelSelect.add(new Option(m.qType ? `${m.label} (${m.qType})` : m.label, m.id)));
+// The header has the same choice, grouped under each vehicle type, so a short name shows when closed
+const headerModel = document.getElementById('headerModel');
+const typeGroups = {};
+MODELS.forEach(m => {
+  const type = m.qType || 'Other';
+  if (!typeGroups[type]) {
+    typeGroups[type] = Object.assign(document.createElement('optgroup'), { label: type });
+    headerModel.appendChild(typeGroups[type]);
+  }
+  typeGroups[type].appendChild(new Option(m.label, m.id));
+});
+function chooseModel(id) {
+  if (id === sel.model) return;
+  sel.model = id;
+  loadModel(currentModel());
+  updateUI();
+}
+modelSelect.addEventListener('change', () => chooseModel(modelSelect.value));
+headerModel.addEventListener('change', () => chooseModel(headerModel.value));
+
+const swatchesEl = document.getElementById('swatches');
+SWATCHES.forEach(s => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.setAttribute('role', 'radio');
+  b.setAttribute('aria-label', s.name);
+  b.title = s.name;
+  b.dataset.id = s.id;
+  b.style.background = s.swatchCss || s.hex;
+  b.addEventListener('click', () => { sel.swatch = s.id; sel.finish = null; updateUI(); });
+  swatchesEl.appendChild(b);
+});
+
+const finishesEl = document.getElementById('finishes');
+Object.entries(FINISHES).forEach(([id, f]) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.setAttribute('role', 'radio');
+  b.dataset.id = id;
+  b.textContent = f.label;
+  b.addEventListener('click', () => { sel.finish = id; updateUI(); });
+  finishesEl.appendChild(b);
+});
+
+const chromeToggle = document.getElementById('chromeToggle');
+chromeToggle.addEventListener('change', () => { sel.chrome = chromeToggle.checked; updateUI(); });
+
+const coverageEl = document.getElementById('coverage');
+coverageEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+  sel.coverage = b.dataset.coverage;
+  updateUI();
+  if (sel.coverage === 'partial') {
+    const first = PANELS.find(p => sel.panels.has(p.id));
+    focusView(...(first ? first.view : [30, 35]));
+  }
+}));
+
+const packageSelect = document.getElementById('packageSelect');
+PACKAGES.forEach(p => packageSelect.add(new Option(`${p.name} · ${money(p.price)}`, p.id)));
+packageSelect.addEventListener('change', () => {
+  const pkg = PACKAGES.find(p => p.id === packageSelect.value);
+  if (!pkg) return;
+  const wasBlackout = !!matchPackage()?.chrome;   // its chrome delete is part of the package
+  sel.panels = new Set(pkg.panels);
+  if (pkg.chrome) sel.chrome = true;
+  else if (wasBlackout) sel.chrome = false;
+  updateUI();
+  focusView(...PANEL[pkg.panels[0]].view);
+});
+
+const chipsEl = document.getElementById('panelChips');
+PANELS.forEach(p => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.dataset.id = p.id;
+  b.setAttribute('aria-pressed', 'false');
+  b.append(p.short, Object.assign(document.createElement('small'), { textContent: money(p.price) }));
+  b.addEventListener('click', () => togglePanel(p.id));
+  chipsEl.appendChild(b);
+});
+
+const baseEl = document.getElementById('baseSwatches');
+BASE_COLORS.forEach(c => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.setAttribute('role', 'radio');
+  b.setAttribute('aria-label', c.name);
+  b.title = c.name;
+  b.dataset.id = c.id;
+  b.style.background = c.hex;
+  b.addEventListener('click', () => { sel.base = c.id; updateUI(); });
+  baseEl.appendChild(b);
+});
+
+const currentModel = () => MODELS.find(m => m.id === sel.model) || MODELS[0];
+const selFinishId = () => sel.finish || SW[sel.swatch].finish;
+const panelAvailable = id => !zoneCounts || PANEL[id].zones.every(z => zoneCounts[z] > 0);
+
+function togglePanel(id) {
+  if (sel.panels.has(id)) {
+    sel.panels.delete(id);
+  } else {
+    // Panels that cover the same area replace each other (e.g. Both Bumpers vs Front Bumper)
+    for (const other of [...sel.panels]) {
+      if (PANEL[other].zones.some(z => PANEL[id].zones.includes(z))) sel.panels.delete(other);
+    }
+    sel.panels.add(id);
+    // Front + rear bumper costs more than the Both Bumpers price
+    if (sel.panels.has('frontBumper') && sel.panels.has('rearBumper') && panelAvailable('bumpers')) {
+      sel.panels.delete('frontBumper'); sel.panels.delete('rearBumper'); sel.panels.add('bumpers');
+    }
+    focusView(...PANEL[id].view);
+  }
+  updateUI();
+}
+
+function matchPackage() {
+  const same = PACKAGES.filter(p => p.panels.length === sel.panels.size && p.panels.every(id => sel.panels.has(id)));
+  return same.find(p => !!p.chrome === sel.chrome) || same[0] || null;
+}
+
+function estimate() {
+  const finish = FINISHES[selFinishId()];
+  const extras = [];
+  let label, price = null, text;
+  if (sel.coverage === 'full') {
+    const type = currentModel().qType;
+    price = FULL_WRAP[type] ?? null;
+    label = type ? `Full color change, ${type}` : 'Full color change';
+  } else if (!sel.panels.size) {
+    label = 'Pick the panels to wrap';
+  } else {
+    const pkg = matchPackage();
+    if (pkg) { price = pkg.price; label = pkg.name; }
+    else {
+      price = [...sel.panels].reduce((sum, id) => sum + PANEL[id].price, 0);
+      label = sel.panels.size === 1 ? PANEL[[...sel.panels][0]].name : `${sel.panels.size} panels`;
+    }
+  }
+  if (sel.chrome && !(sel.coverage === 'partial' && matchPackage()?.chrome)) extras.push(`chrome delete ${CHROME_DELETE_PRICE}`);
+  if (finish.upcharge) extras.push(`${finish.label.toLowerCase()} film ${finish.upcharge}`);
+  text = price === null ? '' : `From ${money(price)}` + (extras.length ? ' + ' + extras.join(' + ') : '');
+  return { label, price, extras, text };
+}
+
+function updateUI() {
+  const sw = SW[sel.swatch], finId = selFinishId();
+  const finish = FINISHES[finId].label;
+  const partial = sel.coverage === 'partial';
+  for (const id of [...sel.panels]) if (!panelAvailable(id)) sel.panels.delete(id);
+  sel.mask = partial ? zonesFor([...sel.panels]) : null;
+
+  document.getElementById('colorName').textContent = sw.name;
+  swatchesEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', b.dataset.id === sel.swatch));
+  finishesEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', b.dataset.id === finId));
+  coverageEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', b.dataset.coverage === sel.coverage));
+  document.getElementById('partialGroup').hidden = !partial;
+  chipsEl.querySelectorAll('button').forEach(b => {
+    const ok = panelAvailable(b.dataset.id);
+    b.disabled = !ok;
+    b.title = ok ? '' : 'Not on this vehicle';
+    b.setAttribute('aria-pressed', sel.panels.has(b.dataset.id));
+  });
+  baseEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', b.dataset.id === sel.base));
+  document.getElementById('baseName').textContent = BASE[sel.base].name;
+  document.getElementById('panelCount').textContent = sel.panels.size ? `${sel.panels.size} selected` : '';
+  const pkg = matchPackage();
+  packageSelect.value = pkg ? pkg.id : '';
+  chromeToggle.checked = sel.chrome;
+  modelSelect.value = headerModel.value = sel.model;
+  document.getElementById('chromeNote').hidden = !!currentModel().chrome?.length;
+
+  const est = estimate();
+  document.getElementById('estimateLabel').textContent = est.label;
+  document.getElementById('estimatePrice').textContent = est.price === null ? '' : `From ${money(est.price)}`;
+  document.getElementById('estimateExtras').textContent =
+    (est.extras.length ? '+ ' + est.extras.join(' · ') + '. ' : '') + 'Final price after inspection.';
+
+  // Field names match the quote form (assets/site.js reads them from the URL)
+  const panelNames = PANELS.filter(p => sel.panels.has(p.id)).map(p => p.name).join(', ');
+  const look = sw.name.toLowerCase().includes(finish.toLowerCase()) ? sw.name : `${sw.name} (${finish.toLowerCase()})`;
+  const q = new URLSearchParams({
+    service: 'vinyl',
+    vCoverage: partial ? 'Partial wrap' : 'Full wrap',
+    vPanels: partial ? panelNames : 'All exterior body panels',
+    vCurrent: sw.name,
+    vRequested: `${sw.name}, ${finish} finish`,
+    summary: (partial ? `Partial wrap: ${pkg ? pkg.name + ' (' + panelNames + ')' : panelNames || 'panels not selected'} in ${look}` : `Full color change: ${look}`)
+      + (sel.chrome ? ' + chrome delete' : ''),
+  });
+  if (partial) q.set('qColor', BASE[sel.base].name);
+  if (est.text) q.set('visualizerEstimate', est.text);
+  if (currentModel().qType) q.set('qType', currentModel().qType);
+  if (sel.chrome) q.append('wrapOptions', 'Chrome delete');
+  document.getElementById('quoteBtn').href = 'quote.html?' + q.toString();
+  hudKey = '';  // force HUD refresh
+}
+updateUI();
+
+/* ---------- renderer ---------- */
+const canvas = document.getElementById('stage');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+} catch (e) {
+  document.body.classList.add('no-webgl');
+  throw e;
+}
+const isPhone = () => innerWidth < 760;
+renderer.setPixelRatio(Math.min(devicePixelRatio, isPhone() ? 1.5 : 2));
+renderer.setSize(innerWidth, innerHeight, false);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+
+const scene = new THREE.Scene();
+const BG = new THREE.Color('#07090c');
+scene.background = BG;
+scene.fog = new THREE.Fog(BG, 16, 32);
+
+const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.1, 100);
+camera.position.set(4, 1.2, 6);
+
+/* ---------- reflections: a dark garage with light strips, baked to an environment map ---------- */
+function buildEnvScene(light = false) {
+  const s = new THREE.Scene();
+  const room = new THREE.Mesh(new THREE.BoxGeometry(30, 10, 30), new THREE.MeshBasicMaterial({ color: light ? new THREE.Color().setScalar(.62) : 0x07080a, side: THREE.BackSide }));
+  room.position.y = 5;
+  s.add(room);
+  const glow = (w, h, d, x, y, z, i) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ color: new THREE.Color().setScalar(i) }));
+    m.position.set(x, y, z);
+    s.add(m);
+  };
+  for (let i = -3; i <= 3; i++) glow(.35, .05, 18, i * 2.4, 9.9, 0, 9);           // ceiling strips
+  glow(8, .05, 6, 0, 9.95, 0, 2.2);                                                // softbox overhead
+  for (let i = -3; i <= 3; i++) {                                                  // wall strips
+    glow(.05, 5, .3, 14.9, 4.5, i * 4, 4);
+    glow(.05, 5, .3, -14.9, 4.5, i * 4, 4);
+    glow(.3, 5, .05, i * 4, 4.5, 14.9, 4);
+    glow(.3, 5, .05, i * 4, 4.5, -14.9, 4);
+  }
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshBasicMaterial({ color: new THREE.Color().setScalar(light ? .3 : .05) }));
+  floor.rotation.x = -Math.PI / 2;
+  s.add(floor);
+  return s;
+}
+const pmrem = new THREE.PMREMGenerator(renderer);
+const ENV = { dark: pmrem.fromScene(buildEnvScene(), 0.03).texture, light: pmrem.fromScene(buildEnvScene(true), 0.03).texture };
+scene.environment = ENV.dark;
+
+/* ---------- the visible garage ---------- */
+const garage = new THREE.Group();
+scene.add(garage);
+let mirror, floorCoat, wallMat, hemi;
+{
+  const reflectRes = isPhone() ? 512 : 1024;
+  mirror = new Reflector(new THREE.PlaneGeometry(60, 60), {
+    textureWidth: reflectRes, textureHeight: reflectRes, color: 0x8a8f96, clipBias: 0.003,
+  });
+  mirror.rotation.x = -Math.PI / 2;
+  garage.add(mirror);
+
+  floorCoat = new THREE.Mesh(
+    new THREE.PlaneGeometry(60, 60),
+    new THREE.MeshStandardMaterial({ color: 0x050608, roughness: .55, metalness: 0, envMapIntensity: .35, transparent: true, opacity: .84 })
+  );
+  floorCoat.rotation.x = -Math.PI / 2;
+  floorCoat.position.y = .002;
+  garage.add(floorCoat);
+
+  wallMat = new THREE.MeshStandardMaterial({ color: 0x0c0e12, roughness: .9 });
+  const room = new THREE.Mesh(new THREE.BoxGeometry(28, 5, 28), [wallMat, wallMat, wallMat, new THREE.MeshBasicMaterial({ visible: false }), wallMat, wallMat]);
+  room.material.forEach(m => m.side = THREE.BackSide);
+  room.position.y = 2.5;
+  garage.add(room);
+
+  const stripMat = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false, fog: false });
+  const stripGeo = new THREE.BoxGeometry(.12, .04, 9);
+  for (let i = -3; i <= 3; i++) {
+    const s = new THREE.Mesh(stripGeo, stripMat);
+    s.position.set(i * 1.9, 4.9, 0);
+    garage.add(s);
+  }
+  const wallStripMat = new THREE.MeshBasicMaterial({ color: 0xd8ecff, toneMapped: false });
+  const vGeo = new THREE.BoxGeometry(.08, 3.4, .02);
+  for (let i = -5; i <= 5; i++) {
+    const a = new THREE.Mesh(vGeo, wallStripMat); a.position.set(i * 2.3, 2.4, -13.95); garage.add(a);
+    const b = new THREE.Mesh(vGeo, wallStripMat); b.position.set(i * 2.3, 2.4, 13.95); garage.add(b);
+    const c = new THREE.Mesh(vGeo, wallStripMat); c.rotation.y = Math.PI / 2; c.position.set(13.95, 2.4, i * 2.3); garage.add(c);
+    const d = new THREE.Mesh(vGeo, wallStripMat); d.rotation.y = Math.PI / 2; d.position.set(-13.95, 2.4, i * 2.3); garage.add(d);
+  }
+  hemi = new THREE.HemisphereLight(0xbfd8ff, 0x0a0a0a, .35);
+  scene.add(hemi);
+}
+
+/* soft contact shadow under the car */
+function shadowTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(128, 128, 10, 128, 128, 128);
+  grd.addColorStop(0, 'rgba(0,0,0,.92)');
+  grd.addColorStop(.55, 'rgba(0,0,0,.6)');
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const shadow = new THREE.Mesh(
+  new THREE.PlaneGeometry(1, 1),
+  new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthWrite: false })
+);
+shadow.rotation.x = -Math.PI / 2;
+shadow.position.y = .005;
+shadow.renderOrder = 2;
+scene.add(shadow);
+
+/* ---------- light / dark garage ---------- */
+// Light mode turns the dark garage into a white studio: white walls, a pale glossy floor and
+// brighter reflections in the paint. The choice is shared with the site (localStorage 'splash-theme').
+const GARAGE = {
+  dark:  { bg: '#07090c', wall: 0x0c0e12, coat: 0x050608, coatOpacity: .84, mirror: 0x8a8f96, hemi: [0xbfd8ff, 0x0a0a0a, .35] },
+  light: { bg: '#e9ecef', wall: 0xf2f4f6, coat: 0xd9dde1, coatOpacity: .74, mirror: 0xb4b9bf, hemi: [0xffffff, 0x9aa1a8, 1.1] },
+};
+const themeBtn = document.getElementById('themeBtn');
+function applyTheme(light) {
+  const g = light ? GARAGE.light : GARAGE.dark;
+  document.documentElement.dataset.theme = light ? 'light' : 'dark';
+  document.querySelector('meta[name="theme-color"]').content = g.bg;
+  BG.set(g.bg);
+  scene.fog.color.set(g.bg);
+  scene.environment = light ? ENV.light : ENV.dark;
+  wallMat.color.setHex(g.wall);
+  floorCoat.material.color.setHex(g.coat);
+  if (floorCoat.material.transparent) floorCoat.material.opacity = g.coatOpacity;   // lite mode keeps it opaque
+  mirror.material.uniforms.color.value.setHex(g.mirror);
+  hemi.color.setHex(g.hemi[0]); hemi.groundColor.setHex(g.hemi[1]); hemi.intensity = g.hemi[2];
+  themeBtn.setAttribute('aria-pressed', String(light));
+  themeBtn.setAttribute('aria-label', light ? 'Switch to dark mode' : 'Switch to light mode');
+}
+applyTheme(document.documentElement.dataset.theme === 'light');
+themeBtn.addEventListener('click', () => {
+  const light = document.documentElement.dataset.theme !== 'light';
+  applyTheme(light);
+  try { localStorage.setItem('splash-theme', light ? 'light' : 'dark'); } catch (e) {}
+});
+
+/* ---------- shared materials the wrap controls drive ---------- */
+// Partial wraps: every paint mesh is drawn twice, once with the wrap film and once with
+// the current paint. Each pixel works out which panel it's on (the same rules as zoneOf
+// below) and the two passes keep only their own panels, so the seams are clean lines.
+const ZONE_DEBUG_COLORS = {
+  roof: '#ffd400', hood: '#ff2a2a', trunk: '#2a6bff', spoiler: '#ff2ad4', mirrors: '#00e5ff', frontDoors: '#2ad42a',
+  rearDoors: '#0b6b0b', fenders: '#ff8c00', quarters: '#8a2aff', frontBumper: '#ff9ec8', rearBumper: '#8b5a2b', pillars: '#ffffff', other: '#555555',
+};
+const ALL_ZONES = (1 << ZONES.length) - 1;
+const zoneUniforms = {
+  uWrapMask: { value: ALL_ZONES },
+  uFwd: { value: new THREE.Vector3(0, 0, 1) }, uLat: { value: new THREE.Vector3(1, 0, 0) },
+  uBox: { value: new THREE.Vector4(0, 1, 0, 1) },     // nose-axis min, length, ground y, height
+  uLatBox: { value: new THREE.Vector2(0, 1) },        // sideways middle, half width
+  uZ: { value: new Array(20).fill(0) },
+  uZoneColors: { value: ZONES.map(z => new THREE.Color(ZONE_DEBUG_COLORS[z])) },
+  uPaintMin: { value: .62 },                          // paintFromTexture: brightness where paint starts
+  uPaintRef: { value: .85 },                          // …and the brightness of plain paint in the texture
+  uPaintTint: { value: .05 },                         // …and how much color tint the white may have
+  uPaintZones: { value: 0 },                          // zones that are all paint whatever the texture says
+  uWheels: { value: new THREE.Vector4() },            // rear axle, front axle, axle height, rim radius (0 = off)
+  uGlass: { value: new THREE.Vector4() },             // on (1/0), how dark glass pixels are, how much texture shows through, reflection softness
+  uGlassTint: { value: new THREE.Color() },           // glass color
+  uGlassBack: { value: 1 },                           // 1: parts facing straight back can be glass, 0: they never are
+  uSmoothPaint: { value: 0 },                         // 0–1: how much of the texture's bump map to drop on the paint
+};
+const ZONE_GLSL = /* glsl */`
+uniform int uWrapMask;
+uniform vec3 uFwd; uniform vec3 uLat; uniform vec4 uBox; uniform vec2 uLatBox;
+uniform float uZ[20];
+uniform vec3 uZoneColors[${ZONES.length}];
+uniform float uPaintMin; uniform float uPaintRef; uniform float uPaintTint; uniform int uPaintZones; uniform vec4 uWheels; uniform vec4 uGlass; uniform vec3 uGlassTint; uniform float uGlassBack; uniform float uSmoothPaint;
+varying vec3 vWrapPos; varying vec3 vWrapN;
+// zone numbers follow ZONES; uZ order follows zoneParams()
+int wrapZone() {
+  float u = (dot(vWrapPos, uFwd) - uBox.x) / uBox.y;
+  float v = (vWrapPos.y - uBox.z) / uBox.w;
+  float w = abs(dot(vWrapPos, uLat) - uLatBox.x) / uLatBox.y;
+  float up = normalize(vWrapN).y;
+  if (u > uZ[13] && u < uZ[14] && v > uZ[15] && w > uZ[16]) return 4;
+  if (u > uZ[7] && (v < uZ[9] || up < .5)) return 9;
+  if (u < uZ[8] && v >= uZ[9] && up < .5 && uZ[19] > .5) return 2;
+  if (u < uZ[8] && (v < uZ[9] || up < .5)) return 10;
+  if (u >= uZ[10] && u <= uZ[11] && v >= uZ[12]) return 3;
+  if (u >= uZ[2]) return (up > .5 && w < uZ[3]) ? 1 : 7;
+  if (u <= uZ[6]) return (up > .5 && w < uZ[3]) ? 2 : 8;
+  if (v >= uZ[0]) return (v >= uZ[1] && up > .5) ? 0 : 11;
+  if (u <= uZ[4]) return 8;
+  if (v < uZ[17]) return 12;
+  return (uZ[18] > 3. && u < uZ[5]) ? 6 : 5;
+}
+`;
+function zoneParams(Z) {
+  return [Z.belt, Z.roof, Z.hood, Z.hoodWidth, Z.doorRear, Z.rearDoorSplit, Z.deck, Z.frontBumper, Z.rearBumper, Z.bumperTop,
+    ...Z.spoiler, ...Z.mirror, Z.rocker, Z.doors, Z.liftgate ? 1 : 0];
+}
+// src: for paintFromTexture models, the model's own textured material. Its texture is kept,
+// and only the bright, untinted (white paint) pixels take the wrap color and finish.
+function zonedPaint(side, src = null) {
+  const mat = new THREE.MeshPhysicalMaterial({
+    color: 0x111111, roughness: .2, metalness: .05,
+    clearcoat: 1, clearcoatRoughness: .03,
+    iridescence: .0001, iridescenceIOR: 2.0, iridescenceThicknessRange: [300, 1100],
+    envMapIntensity: 1.15,
+  });
+  mat.defines = { [side]: '' };
+  if (src) {
+    for (const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap']) mat[k] = src[k] || null;
+    if (src.normalScale) mat.normalScale.copy(src.normalScale);
+    mat.side = src.side;
+    mat.defines.PAINT_FROM_MAP = '';
+  }
+  mat.onBeforeCompile = shader => {
+    Object.assign(shader.uniforms, zoneUniforms);
+    shader.vertexShader = 'varying vec3 vWrapPos; varying vec3 vWrapN;\n' + shader.vertexShader.replace('#include <project_vertex>',
+      '#include <project_vertex>\nvWrapPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWrapN = mat3(modelMatrix) * objectNormal;');
+    shader.fragmentShader = ZONE_GLSL + shader.fragmentShader
+      .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+        int wrapZ = wrapZone();
+        bool wrapped = ((uWrapMask >> wrapZ) & 1) == 1;
+        #if defined(WRAP_BASE)
+          if (wrapped) discard;
+        #elif defined(WRAP_FILM)
+          if (!wrapped) discard;
+        #endif`)
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        float wrapPaint = 1.;
+        float wrapGlass = 0.;
+        #if defined(PAINT_FROM_MAP) && defined(USE_MAP)
+          vec3 wrapTexel = sampledDiffuseColor.rgb;
+          float wrapLum = dot(wrapTexel, vec3(.2126, .7152, .0722));
+          float wrapSat = max(wrapTexel.r, max(wrapTexel.g, wrapTexel.b)) - min(wrapTexel.r, min(wrapTexel.g, wrapTexel.b));
+          wrapPaint = smoothstep(uPaintMin, uPaintMin + .1, wrapLum) * (1. - smoothstep(uPaintTint, uPaintTint + .07, wrapSat));
+          float wrapWheel = 0.;
+          if (uWheels.w > 0.) {
+            // the outer faces of the wheels: bright silver rims are not paint
+            float wu = (dot(vWrapPos, uFwd) - uBox.x) / uBox.y;
+            float wh = (vWrapPos.y - uBox.z) / uBox.y;                 // height, in car lengths
+            float ww = abs(dot(vWrapPos, uLat) - uLatBox.x) / uLatBox.y;
+            float axle = uWheels.z * uBox.w / uBox.y;
+            float rim = min(length(vec2(wu - uWheels.x, wh - axle)), length(vec2(wu - uWheels.y, wh - axle)));
+            if (ww > .6 && rim < uWheels.w) { wrapPaint = 0.; wrapWheel = 1.; }
+          }
+          // lights: the texture rims red lenses with a pinkish white that reads as a chalky outline.
+          // Bright pinkish pixels are body paint, darker reddish ones (red well above green and blue,
+          // not orange) are drawn as red lens.
+          float wrapRatio = wrapTexel.r / max(max(wrapTexel.g, wrapTexel.b), .001);
+          float wrapNotOrange = 1. - smoothstep(.15, .3, abs(wrapTexel.g - wrapTexel.b) / max(wrapTexel.r, .001));
+          float wrapPink = smoothstep(uPaintMin, uPaintMin + .1, wrapLum) * smoothstep(1.02, 1.08, wrapRatio) * wrapNotOrange;
+          float wrapRed = smoothstep(1.2, 1.5, wrapRatio) * wrapNotOrange * (1. - wrapPink);
+          wrapPaint = max(wrapPaint * (1. - wrapRed), wrapPink);
+          wrapTexel = mix(wrapTexel, wrapTexel * vec3(.9, .12, .12), wrapRed);
+          // keep the texture's shading (panel gaps, creases) but swap its white for the paint color
+          diffuseColor.rgb = mix(wrapTexel, diffuse * clamp(wrapLum / uPaintRef, 0., 1.1), wrapPaint);
+          if (((uPaintZones >> wrapZ) & 1) == 1) {
+            // all paint, except the mirror glass: the dark face of the mirror that looks back
+            float mirrorGlass = wrapZ == 4 ? (1. - smoothstep(uGlass.y, uGlass.y + .08, wrapLum)) * smoothstep(.3, .6, -dot(normalize(vWrapN), uFwd)) : 0.;
+            wrapPaint = 1. - mirrorGlass; wrapGlass = mirrorGlass;
+            diffuseColor.rgb = mix(diffuse, vec3(.02), mirrorGlass);
+          }
+          else if (uGlass.x > 0.) {
+            // glass: dark, untinted parts above the window line. Red lenses and amber markers are
+            // not glass, nor (with rearFacing: false) anything facing straight back, like sedan tail
+            // lamps and trunk lips that sit above the window line. An even, light glass tint replaces the streaky
+            // AI texture (which reads as plastic film); a blurred hint of the texture keeps the
+            // painted-in seats faintly visible.
+            float glassH = (vWrapPos.y - uBox.z) / uBox.w;
+            wrapGlass = step(uZ[0] - .05, glassH) * (1. - smoothstep(uGlass.y, uGlass.y + .08, wrapLum)) * (1. - wrapPaint)
+              * (1. - smoothstep(.06, .12, wrapSat)) * (1. - wrapRed) * max(uGlassBack, 1. - smoothstep(.75, .9, -dot(normalize(vWrapN), uFwd)));
+            vec3 softGlass = texture2D(map, vMapUv, 3.).rgb;
+            diffuseColor.rgb = mix(diffuseColor.rgb, mix(uGlassTint, softGlass * 1.6, uGlass.z), wrapGlass);
+          }
+          if (uSmoothPaint > 0.) {
+            // panel seams: the texture draws them mid-gray, which shows as chalky lines on a dark wrap.
+            // Real seams are darker than the paint, so draw them as a darker shade of the paint color.
+            float seam = (1. - wrapPaint) * (1. - wrapGlass) * (1. - wrapWheel)
+              * smoothstep(uPaintMin - .4, uPaintMin - .25, wrapLum) * (1. - smoothstep(uPaintTint, uPaintTint + .07, wrapSat));
+            diffuseColor.rgb = mix(diffuseColor.rgb, diffuse * mix(1., clamp(wrapLum / uPaintRef, 0., 1.), .5), seam);
+          }
+        #endif`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        #ifdef PAINT_FROM_MAP
+          // glass is smooth; with smoothPaint the paint drops the AI bump map too
+          normal = normalize(mix(normal, nonPerturbedNormal, max(wrapGlass, wrapPaint * uSmoothPaint)));
+        #endif`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        #ifdef WRAP_DEBUG
+          diffuseColor.rgb = mix(diffuseColor.rgb, uZoneColors[wrapZ], wrapPaint);
+        #endif`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+        #if defined(PAINT_FROM_MAP) && defined(USE_ROUGHNESSMAP)
+          roughnessFactor = mix(texelRoughness.g, roughness, wrapPaint);
+        #endif
+        #ifdef PAINT_FROM_MAP
+          roughnessFactor = mix(roughnessFactor, uGlass.w, wrapGlass);   // soft enough to hide wavy AI glass
+        #endif`)
+      .replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>
+        #if defined(PAINT_FROM_MAP) && defined(USE_METALNESSMAP)
+          metalnessFactor = mix(texelMetalness.b, metalness, wrapPaint);
+        #endif
+        #ifdef PAINT_FROM_MAP
+          metalnessFactor = mix(metalnessFactor, 0., wrapGlass);
+        #endif`)
+      .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>
+        #ifdef PAINT_FROM_MAP
+          // glass, tires and trim keep their own finish: no clear coat or color-shift on them
+          #ifdef USE_CLEARCOAT
+            material.clearcoat *= wrapPaint;
+          #endif
+          #ifdef USE_IRIDESCENCE
+            material.iridescence *= wrapPaint;
+          #endif
+        #endif`);
+  };
+  return mat;
+}
+// ?debug=zones paints every panel its own color, to check and tune the panel boundaries
+const FILM_SIDE = DEBUG_ZONES ? 'WRAP_DEBUG' : 'WRAP_FILM';
+const paintMat = zonedPaint(FILM_SIDE);
+paintMat.name = 'WRAP_PAINT';
+const baseMat = zonedPaint('WRAP_BASE');   // the car's current paint on panels that aren't wrapped
+baseMat.name = 'WRAP_BASE';
+// Every material the wrap and current-paint colors drive (textured models add their own pair)
+const filmMats = [paintMat], baseMats = [baseMat];
+const baseFor = new Map([[paintMat, baseMat]]);
+const hiddenMat = new THREE.MeshBasicMaterial({ visible: false });
+const chromeMat = new THREE.MeshPhysicalMaterial({ color: 0xe8ecf0, metalness: 1, roughness: .06, clearcoat: .0001 });
+chromeMat.name = 'WRAP_CHROME';
+const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x0c0f13, metalness: .1, roughness: .04, transparent: true, opacity: .62, envMapIntensity: 1.4 });
+glassMat.name = 'WRAP_GLASS';
+
+/* ---------- model loading ---------- */
+const draco = new DRACOLoader().setDecoderPath(DRACO_PATH);
+const loader = new GLTFLoader().setDRACOLoader(draco);
+const carHolder = new THREE.Group();
+scene.add(carHolder);
+let car = null, shownModel = null, loadToken = 0, firstLoad = true;
+
+const loaderEl = document.getElementById('loader');
+const loaderBar = document.getElementById('loaderBar');
+
+function nameMatches(list, ...names) {
+  const L = (list || []).map(s => s.toLowerCase());
+  return names.some(n => n && L.includes(n.toLowerCase()));
+}
+const AUTO_PAINT = /(^|[_\s-])(body|paint|car_?paint|bodywork)([_\s-]|$)/i;
+
+async function loadModel(m) {
+  const token = ++loadToken;
+  if (!firstLoad) { loaderEl.classList.remove('done'); document.getElementById('loaderText').textContent = 'Switching vehicles…'; }
+  loaderBar.style.width = '0%';
+  let gltf;
+  try {
+    // a slow or flaky first request (cold file cache, dropped connection) usually succeeds on a retry
+    for (let attempt = 0; ; attempt++) {
+      try {
+        gltf = await loader.loadAsync(m.url, e => { if (e.total) loaderBar.style.width = (100 * e.loaded / e.total).toFixed(0) + '%'; });
+        break;
+      } catch (err) {
+        if (attempt >= 2 || token !== loadToken) throw err;
+        await new Promise(r => setTimeout(r, 1200 * (attempt + 1)));
+      }
+    }
+  } catch (err) {
+    console.error('[wrap] could not load', m.url, err);
+    if (token !== loadToken) return;
+    if (car) {
+      // keep showing the previous vehicle rather than trapping the visitor behind the loader,
+      // and put the picker back on it so the menu matches what is on screen
+      loaderEl.classList.add('done');
+      if (shownModel) { sel.model = shownModel; updateUI(); }
+    } else {
+      document.body.classList.add('no-webgl');
+    }
+    return;
+  }
+  if (token !== loadToken) return;
+
+  const root = gltf.scene;
+  const names = new Set();
+  const ownMats = [];   // textured wrap/paint materials made for this vehicle (removed when it's swapped out)
+  let painted = 0;
+  root.traverse(o => {
+    if (!o.isMesh) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    const next = mats.map(mat => {
+      names.add(mat.name);
+      if (m.paintFromTexture && mat.map) {
+        painted++;
+        const film = zonedPaint(FILM_SIDE, mat), base = zonedPaint('WRAP_BASE', mat);
+        filmMats.push(film); baseMats.push(base); baseFor.set(film, base);
+        ownMats.push(film, base);
+        return film;
+      }
+      const isPaint = m.paint ? nameMatches(m.paint, mat.name, o.name) : AUTO_PAINT.test(mat.name) || AUTO_PAINT.test(o.name);
+      if (isPaint) { painted++; return paintMat; }
+      if (nameMatches(m.chrome, mat.name, o.name)) return chromeMat;
+      if (nameMatches(m.glass, mat.name, o.name)) return glassMat;
+      return mat;
+    });
+    o.material = Array.isArray(o.material) ? next : next[0];
+  });
+  console.info(`[wrap] "${m.label}" materials:`, [...names].sort());
+  if (!painted) console.warn(`[wrap] No paint parts found in "${m.label}". Add one of the material names above to its "paint" list.`);
+
+  // normalize size, center it, sit it on the floor
+  root.rotation.y = THREE.MathUtils.degToRad(m.rotateY || 0);
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(root);
+  const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
+  const s = CAR_LENGTH / Math.max(size.x, size.z);
+  root.scale.setScalar(s);
+  root.position.set(-center.x * s, -box.min.y * s, -center.z * s);
+  shadow.scale.set(size.x * s * 1.3, size.z * s * 1.18, 1);
+  root.updateMatrixWorld(true);
+  const prepared = preparePaint(root, { ...ZONE_DEFAULTS, ...(m.zones || {}) });
+
+  zoneUniforms.uPaintMin.value = m.paintMin ?? .62;
+  zoneUniforms.uPaintTint.value = m.paintTint ?? .05;
+  zoneUniforms.uPaintRef.value = m.paintRef ?? .85;
+  zoneUniforms.uPaintZones.value = (m.paintZones || []).reduce((bits, z) => bits | (1 << ZONES.indexOf(z)), 0);
+  zoneUniforms.uWheels.value.fromArray(m.wheels || [0, 0, 0, 0]);
+  zoneUniforms.uGlass.value.set(m.glass === false ? 0 : 1, m.glass?.dark ?? .4, m.glass?.detail ?? .15, m.glass?.soft ?? .2);
+  zoneUniforms.uGlassTint.value.set(m.glass?.tint ?? 0x3f4549);
+  zoneUniforms.uGlassBack.value = m.glass?.rearFacing === false ? 0 : 1;
+  zoneUniforms.uSmoothPaint.value = m.smoothPaint ?? 0;
+  if (car) { carHolder.remove(car); disposeTree(car); }
+  root.userData.wrapMats = ownMats;
+  car = root;
+  shownModel = m.id;
+  baseCopies = prepared.copies;
+  zoneCounts = prepared.counts;
+  maskKey = '';
+  carHolder.add(car);
+  if (DEBUG_ZONES) console.table(zoneCounts);
+  updateUI();   // some panels may not exist on this vehicle
+  firstLoad = false;
+  loaderBar.style.width = '100%';
+  setTimeout(() => loaderEl.classList.add('done'), 150);
+}
+
+/* ---------- partial wraps: which panel each part of the paint belongs to ---------- */
+let baseCopies = [];   // second copy of each paint mesh, drawn with the current paint
+let maskKey = '';
+
+// Same rules as wrapZone() in ZONE_GLSL; here it's only used to count what's on the vehicle
+function zoneOf(u, v, w, up, Z) {
+  const [m0, m1, mv, mw] = Z.mirror;
+  if (u > m0 && u < m1 && v > mv && w > mw) return 'mirrors';
+  if (u > Z.frontBumper && (v < Z.bumperTop || up < .5)) return 'frontBumper';
+  if (u < Z.rearBumper && v >= Z.bumperTop && up < .5 && Z.liftgate) return 'trunk';
+  if (u < Z.rearBumper && (v < Z.bumperTop || up < .5)) return 'rearBumper';
+  const [s0, s1, sv] = Z.spoiler;
+  if (u >= s0 && u <= s1 && v >= sv) return 'spoiler';
+  if (u >= Z.hood) return up > .5 && w < Z.hoodWidth ? 'hood' : 'fenders';
+  if (u <= Z.deck) return up > .5 && w < Z.hoodWidth ? 'trunk' : 'quarters';
+  if (v >= Z.belt) return v >= Z.roof && up > .5 ? 'roof' : 'pillars';
+  if (u <= Z.doorRear) return 'quarters';
+  if (v < Z.rocker) return 'other';
+  return Z.doors === 4 && u < Z.rearDoorSplit ? 'rearDoors' : 'frontDoors';
+}
+
+function preparePaint(root, Z) {
+  const box = new THREE.Box3().setFromObject(root);
+  const axis = Z.front[1], toNose = Z.front[0] === '-' ? -1 : 1;
+  const lat = axis === 'z' ? 'x' : 'z';
+  const len = box.max[axis] - box.min[axis], h = box.max.y - box.min.y;
+  const halfW = (box.max[lat] - box.min[lat]) / 2, midW = (box.max[lat] + box.min[lat]) / 2;
+
+  // shader: u = (dot(pos, uFwd) - min) / length runs 0 at the rear to 1 at the nose
+  zoneUniforms.uFwd.value.set(0, 0, 0)[axis] = toNose;
+  zoneUniforms.uLat.value.set(0, 0, 0)[lat] = 1;
+  zoneUniforms.uBox.value.set(toNose > 0 ? box.min[axis] : -box.max[axis], len, box.min.y, h);
+  zoneUniforms.uLatBox.value.set(midW, halfW);
+  zoneUniforms.uZ.value = zoneParams(Z);
+
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3(), t = new THREE.Vector3();
+  const counts = Object.fromEntries(ZONES.map(z => [z, 0]));
+  const paintMeshes = [];
+  root.traverse(o => {
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    if (o.isMesh && mats.some(mt => baseFor.has(mt))) paintMeshes.push(o);
+  });
+  const copies = paintMeshes.map(o => {
+    const pos = o.geometry.attributes.position, idx = o.geometry.index?.array;
+    const tris = (idx ? idx.length : pos.count) / 3;
+    for (let k = 0; k < tris; k++) {
+      a.fromBufferAttribute(pos, idx ? idx[3 * k] : 3 * k).applyMatrix4(o.matrixWorld);
+      b.fromBufferAttribute(pos, idx ? idx[3 * k + 1] : 3 * k + 1).applyMatrix4(o.matrixWorld);
+      c.fromBufferAttribute(pos, idx ? idx[3 * k + 2] : 3 * k + 2).applyMatrix4(o.matrixWorld);
+      n.subVectors(c, b).cross(t.subVectors(a, b)).normalize();
+      t.copy(a).add(b).add(c).divideScalar(3);
+      const along = (t[axis] - box.min[axis]) / len;
+      counts[zoneOf(toNose > 0 ? along : 1 - along, (t.y - box.min.y) / h, Math.abs(t[lat] - midW) / halfW, n.y, Z)]++;
+    }
+    // the copy shares the geometry and only draws the paint, with the current-paint material
+    const copy = new THREE.Mesh(o.geometry, Array.isArray(o.material) ? o.material.map(mt => baseFor.get(mt) || hiddenMat) : baseFor.get(o.material));
+    copy.name = o.name + '_base';
+    copy.visible = false;
+    o.add(copy);
+    return copy;
+  });
+  return { copies, counts };
+}
+
+// mask: Set of zones that get the wrap (everything else shows the current paint); null = whole car
+function applyMask(mask) {
+  const key = DEBUG_ZONES ? 'debug' : mask ? [...mask].sort().join() : 'all';
+  if (key === maskKey) return;
+  maskKey = key;
+  zoneUniforms.uWrapMask.value = mask && !DEBUG_ZONES ? [...mask].reduce((bits, z) => bits | (1 << ZONES.indexOf(z)), 0) : ALL_ZONES;
+  for (const copy of baseCopies) copy.visible = !!mask && !DEBUG_ZONES;
+}
+
+function disposeTree(obj) {
+  const own = obj.userData.wrapMats || [];
+  const drop = list => { for (let i = list.length - 1; i >= 0; i--) if (own.includes(list[i])) list.splice(i, 1); };
+  drop(filmMats); drop(baseMats);
+  own.forEach(mt => baseFor.delete(mt));
+  const done = new Set();
+  obj.traverse(o => {
+    if (!o.isMesh) return;
+    o.geometry?.dispose();
+    (Array.isArray(o.material) ? o.material : [o.material]).forEach(mt => {
+      if ([paintMat, baseMat, hiddenMat, chromeMat, glassMat].includes(mt) || done.has(mt)) return;
+      done.add(mt);
+      for (const k in mt) if (mt[k]?.isTexture) mt[k].dispose();
+      mt.dispose();
+    });
+  });
+}
+
+/* ---------- orbit controls (only active in the "Try it on" section) ---------- */
+const controls = new OrbitControls(camera, canvas);
+controls.enabled = false;
+controls.enableDamping = true;
+controls.enablePan = false;
+controls.minDistance = 4.5;
+controls.maxDistance = 13;
+controls.minPolarAngle = .35;
+controls.maxPolarAngle = 1.5;
+controls.autoRotateSpeed = .7;
+controls.autoRotate = !reduceMotion;
+controls.addEventListener('start', () => { controls.autoRotate = false; focus = null; });
+canvas.style.touchAction = 'pan-y';
+
+// Turn the camera to face a panel: az = degrees around the car (0 = front), el = degrees above the ground
+let focus = null;
+const orbit = new THREE.Spherical(), camOffset = new THREE.Vector3();
+function focusView(az, el) {
+  controls.autoRotate = false;
+  const phi = clamp(THREE.MathUtils.degToRad(90 - el), controls.minPolarAngle, controls.maxPolarAngle);
+  focus = { theta: THREE.MathUtils.degToRad(az), phi };
+}
+if (new URLSearchParams(location.search).has('debug')) window.__wrapDebug = { view: focusView };
+
+/* ---------- free view: orbit and zoom around the car from anywhere on the page ---------- */
+// The chapter text hides and the page stops scrolling, so the current wrap stays on the car.
+let freeView = false;
+const freeViewBtn = document.getElementById('freeViewBtn');
+const freeViewHint = document.getElementById('freeViewHint');
+function setFreeView(on) {
+  freeView = on;
+  document.body.classList.toggle('free-view', on);
+  document.documentElement.style.overflow = on ? 'hidden' : '';
+  freeViewBtn.setAttribute('aria-pressed', String(on));
+  document.getElementById('freeViewLabel').textContent = on ? 'Exit view' : 'Free view';
+  freeViewHint.hidden = !on;
+  controls.autoRotate = false;
+  focus = null;
+}
+freeViewBtn.addEventListener('click', () => setFreeView(!freeView));
+addEventListener('keydown', e => { if (e.key === 'Escape' && freeView) setFreeView(false); });
+
+/* ---------- scroll mapping ---------- */
+let anchors = [];
+function measure() {
+  const maxScroll = document.documentElement.scrollHeight - innerHeight;
+  anchors = chapters.map((c, k) => {
+    const top = c.el.offsetTop, h = c.el.offsetHeight;
+    const a = k === LAST ? top + h - innerHeight : top + h / 2 - innerHeight / 2;
+    return clamp(a, 0, maxScroll);
+  });
+  anchors[0] = 0;
+}
+function scrollPos() {
+  const y = scrollY;
+  if (y <= anchors[0]) return { i: 0, j: 0, f: 0 };
+  if (y >= anchors[LAST] - 1) return { i: LAST, j: LAST, f: 0 };
+  let i = 0;
+  while (i < LAST - 1 && y >= anchors[i + 1]) i++;
+  return { i, j: i + 1, f: clamp((y - anchors[i]) / (anchors[i + 1] - anchors[i]), 0, 1) };
+}
+
+/* ---------- look blending ---------- */
+// wrap = film on the wrapped panels, base = paint everywhere else, mask = wrapped zones (null = whole car).
+// On a full wrap the base is the wrap itself, so the mask doesn't matter and
+// partial ↔ full transitions crossfade instead of popping.
+function lookOf(ch) {
+  const custom = ch.look === 'custom';
+  const sw = SW[custom ? sel.swatch : ch.look];
+  const wrap = { color: sw.color, fin: FINISHES[custom ? selFinishId() : sw.finish] };
+  let base = wrap, mask = null;
+  if (custom && sel.coverage === 'partial') {
+    const b = BASE[sel.base];
+    base = { color: b.color, fin: FINISHES[b.finish] };
+    mask = sel.mask;
+  } else if (!custom && ch.mask) {
+    const b = SW[ch.base] || SW['chalk-white'];
+    base = { color: b.color, fin: FINISHES[b.finish] };
+    mask = ch.mask;
+  }
+  return { sw, wrap, base, mask, chrome: custom ? (sel.chrome ? 1 : 0) : (ch.chrome ? 1 : 0) };
+}
+const NUM_KEYS = ['roughness', 'metalness', 'clearcoat', 'clearcoatRoughness', 'iridescence'];
+const paintState = () => ({ color: new THREE.Color(0x0c0c0d), roughness: .2, metalness: .05, clearcoat: 1, clearcoatRoughness: .03, iridescence: 0 });
+const cur = { wrap: paintState(), base: paintState(), chrome: 0 };
+const tgt = { wrap: paintState(), base: paintState(), chrome: 0 };
+
+function blendPaint(out, A, B, t) {
+  out.color.copy(A.color).lerp(B.color, t);
+  for (const k of NUM_KEYS) out[k] = lerp(A.fin[k], B.fin[k], t);
+}
+function blendLooks(A, B, t) {
+  blendPaint(tgt.wrap, A.wrap, B.wrap, t);
+  blendPaint(tgt.base, A.base, B.base, t);
+  tgt.chrome = lerp(A.chrome, B.chrome, t);
+}
+function easePaint(c, t, k) {
+  c.color.lerp(t.color, k);
+  for (const key of NUM_KEYS) c[key] = lerp(c[key], t[key], k);
+}
+const CHROME_ON = new THREE.Color(0xe8ecf0), CHROME_OFF = new THREE.Color(0x0b0b0c);
+
+function setPaint(mat, c) {
+  mat.color.copy(c.color);
+  mat.roughness = c.roughness;
+  mat.metalness = c.metalness;
+  mat.clearcoat = Math.max(c.clearcoat, .0001);           // never exactly 0 → no shader recompiles mid-scroll
+  mat.clearcoatRoughness = c.clearcoatRoughness;
+  mat.iridescence = Math.max(c.iridescence, .0001);
+}
+function applyLook() {
+  for (const m of filmMats) setPaint(m, cur.wrap);
+  for (const m of baseMats) setPaint(m, cur.base);
+  chromeMat.color.copy(CHROME_ON).lerp(CHROME_OFF, cur.chrome);
+  chromeMat.metalness = 1 - cur.chrome;
+  chromeMat.roughness = lerp(.06, .22, cur.chrome);
+  chromeMat.clearcoat = Math.max(cur.chrome, .0001);
+}
+
+/* ---------- camera ---------- */
+const camTarget = new THREE.Vector3(0, .5, 0);
+const camDesired = new THREE.Vector3();
+const targetDesired = new THREE.Vector3();
+const shift = { x: 0, y: 0 };
+
+function camFit() {
+  // keep the car filling a similar share of the screen on tall phones
+  const a = camera.aspect;
+  camera.fov = a < 1 ? 40 : 32;
+  const k = Math.max(1, 1.45 / a) * Math.tan(THREE.MathUtils.degToRad(16)) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  return clamp(k, .9, 2.3);
+}
+function sideShift(ch) {
+  if (isPhone()) return { x: 0, y: ch.side === 'config' ? .2 : .12 };
+  if (ch.side === 'left') return { x: .2, y: 0 };
+  if (ch.side === 'right') return { x: -.2, y: 0 };
+  if (ch.side === 'config') return { x: -.15, y: 0 };
+  return { x: 0, y: 0 };
+}
+
+/* ---------- HUD + dots ---------- */
+const hud = document.getElementById('hud');
+function updateHud(ch, k) {
+  const L = lookOf(ch);
+  const key = L.sw.id + L.wrap.fin.label + L.chrome + k + !!L.mask;
+  if (key === hudKey) return;
+  hudKey = key;
+  document.getElementById('hudDot').style.background = L.sw.swatchCss || L.sw.hex;
+  document.getElementById('hudName').textContent = L.sw.name;
+  document.getElementById('hudFin').textContent = L.wrap.fin.label + (L.mask ? ' · Partial wrap' : '') + (L.chrome ? ' · Chrome delete' : '');
+  dotsEl.querySelectorAll('button').forEach((b, n) => b.setAttribute('aria-current', n === k));
+}
+
+/* ---------- loop ---------- */
+let configActive = false;
+const clock = new THREE.Clock();
+
+/* weak devices: if frames are slow, drop the mirror floor and render at 1x */
+const LITE = new URLSearchParams(location.search).has('lite');
+let liteMode = false, perfSamples = [];
+function goLite() {
+  if (liteMode) return;
+  liteMode = true;
+  garage.remove(mirror);
+  mirror.dispose();
+  floorCoat.material.opacity = 1;
+  floorCoat.material.transparent = false;
+  renderer.setPixelRatio(1);
+  renderer.setSize(innerWidth, innerHeight, false);
+}
+if (LITE) goLite();
+function watchPerf(dt) {
+  if (liteMode || !car || perfSamples.length >= 90) return;
+  perfSamples.push(dt);
+  if (perfSamples.length === 90) {
+    const sorted = [...perfSamples].sort((a, b) => a - b);
+    if (sorted[45] > 1 / 28) goLite();
+  }
+}
+
+function frame() {
+  const rawDt = clock.getDelta();
+  watchPerf(rawDt);
+  const dt = Math.min(rawDt, .05);
+  const { i, j, f } = scrollPos();
+  const A = chapters[i], B = chapters[j];
+  const e = easeInOut(f);
+
+  // wrap look: hold each look, then crossfade in the middle of the scroll between chapters
+  const LA = lookOf(A), LB = lookOf(B);
+  blendLooks(LA, LB, sstep(.3, .7, f));
+  const kLook = reduceMotion ? 1 : 1 - Math.exp(-dt * 6);
+  easePaint(cur.wrap, tgt.wrap, kLook);
+  easePaint(cur.base, tgt.base, kLook);
+  cur.chrome = lerp(cur.chrome, tgt.chrome, kLook);
+  applyLook();
+  // use the partial-wrap mask of whichever chapter is closer, else the other one's (a full wrap looks the same either way)
+  const near = f < .5 ? LA : LB, far = f < .5 ? LB : LA;
+  applyMask(near.mask || far.mask);
+
+  // camera
+  const kCam = reduceMotion ? 1 : 1 - Math.exp(-dt * 5);
+  const nowConfig = i === LAST || freeView;
+  if (nowConfig !== configActive) {
+    configActive = nowConfig;
+    controls.enabled = configActive;
+    canvas.style.touchAction = configActive ? 'none' : 'pan-y';
+    canvas.style.cursor = configActive ? 'grab' : '';
+    if (configActive) controls.target.copy(camTarget);
+  }
+  if (configActive) {
+    if (focus) {
+      // swing around to the panel that was just picked
+      orbit.setFromVector3(camOffset.subVectors(camera.position, controls.target));
+      const dTheta = Math.atan2(Math.sin(focus.theta - orbit.theta), Math.cos(focus.theta - orbit.theta));
+      const dPhi = focus.phi - orbit.phi;
+      const k = reduceMotion ? 1 : 1 - Math.exp(-dt * 3.5);
+      orbit.theta += dTheta * k;
+      orbit.phi += dPhi * k;
+      camera.position.setFromSpherical(orbit).add(controls.target);
+      if (Math.abs(dTheta) < .005 && Math.abs(dPhi) < .005) focus = null;
+    }
+    controls.update(dt);
+  } else {
+    const fit = camFit();
+    const az = THREE.MathUtils.degToRad(lerp(A.az, B.az, e));
+    const elev = THREE.MathUtils.degToRad(lerp(A.elev, B.elev, e));
+    const dist = lerp(A.dist, B.dist, e) * fit;
+    const ty = lerp(A.ty, B.ty, e);
+    targetDesired.set(0, ty, 0);
+    camDesired.set(Math.sin(az) * Math.cos(elev) * dist, ty + Math.sin(elev) * dist, Math.cos(az) * Math.cos(elev) * dist);
+    camera.position.lerp(camDesired, kCam);
+    camTarget.lerp(targetDesired, kCam);
+    camera.lookAt(camTarget);
+  }
+
+  // slide the car away from whichever side the text is on
+  const sA = sideShift(A), sB = sideShift(B);
+  // free view keeps the car centred
+  shift.x = lerp(shift.x, freeView ? 0 : lerp(sA.x, sB.x, e), kCam);
+  shift.y = lerp(shift.y, freeView ? 0 : lerp(sA.y, sB.y, e), kCam);
+  const w = innerWidth, h = innerHeight;
+  camera.setViewOffset(w, h, -shift.x * w, shift.y * h, w, h);
+
+  updateHud(f < .5 ? A : B, f < .5 ? i : j);
+  hud.classList.toggle('on', !!car);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+function onResize() {
+  camera.aspect = innerWidth / innerHeight;
+  camFit();
+  camera.updateProjectionMatrix();
+  renderer.setPixelRatio(liteMode ? 1 : Math.min(devicePixelRatio, isPhone() ? 1.5 : 2));
+  renderer.setSize(innerWidth, innerHeight, false);
+  measure();
+}
+addEventListener('resize', onResize);
+document.fonts?.ready.then(measure);
+onResize();
+
+if (MODELS.length < 2) {
+  document.getElementById('modelGroup').style.display = 'none';
+  document.getElementById('headerModelWrap').style.display = 'none';
+}
+loadModel(currentModel()).then(measure);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -15,3 +15,7 @@ Recipient: QUOTE_TO in wrangler.jsonc. Allowed website origin: SITE_ORIGIN. Prev
 Local verification: `node scripts/test-worker.mjs` and `node scripts/build.mjs`.
 
 Email success indicates Resend accepted the message, not guaranteed inbox delivery. Logo display depends on the recipient's email image settings. No live email was sent during automated testing.
+
+## Quote attachments
+
+Photos and artwork are sent directly as email attachments through Resend. No R2 bucket or storage binding is required. The combined upload limit remains 10 MB. Email apps may display attached images as previews at the bottom of the message.
