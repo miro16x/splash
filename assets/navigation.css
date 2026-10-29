@@ -40,3 +40,36 @@
 .navigation .menu-trigger,
 :root[data-theme=dark] .navigation .navigation-links>li>a:not(.navigation-quote),
 :root[data-theme=dark] .navigation .menu-trigger{color:inherit}
+
+/* Interactive hover button (.hover-btn): the label slides out while a dot grows into a darker fill
+   and the label returns with an arrow (hover, keyboard focus or press). It lives here because
+   every page with the header loads this file, including the policy pages without site.css. */
+.hover-btn{
+  --hover-btn-bg:#9BD7E8; --hover-btn-fill:#0A3B73; --hover-btn-ink:#0B2036;
+  position:relative;display:inline-flex;align-items:center;justify-content:center;
+  padding:.85rem 2rem;border-radius:999px;overflow:hidden;isolation:isolate;
+  background:var(--hover-btn-bg);color:var(--hover-btn-ink);border:1.5px solid rgba(10,59,115,.25);
+  font-weight:700;font-size:.95rem;text-decoration:none;white-space:nowrap;cursor:pointer;
+  box-shadow:0 10px 24px -12px rgba(10,59,115,.45);
+}
+.hover-btn-label{display:inline-block;transform:translateX(.25rem);transition:transform .3s ease, opacity .3s ease;}
+.hover-btn-reveal{
+  position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;gap:.5rem;
+  color:#fff;opacity:0;transform:translateX(3rem);transition:transform .3s ease, opacity .3s ease;
+}
+.hover-btn-reveal svg{width:1.1em;height:1.1em;flex:none;}
+.hover-btn-dot{
+  position:absolute;left:.85rem;top:calc(50% - .25rem);width:.5rem;height:.5rem;border-radius:.5rem;z-index:0;
+  background:var(--hover-btn-fill);transition:all .3s ease;
+}
+.hover-btn:hover .hover-btn-label,.hover-btn:focus-visible .hover-btn-label,.hover-btn:active .hover-btn-label{transform:translateX(3rem);opacity:0;}
+.hover-btn:hover .hover-btn-reveal,.hover-btn:focus-visible .hover-btn-reveal,.hover-btn:active .hover-btn-reveal{transform:translateX(-.25rem);opacity:1;}
+.hover-btn:hover .hover-btn-dot,.hover-btn:focus-visible .hover-btn-dot,.hover-btn:active .hover-btn-dot{left:0;top:0;width:100%;height:100%;border-radius:999px;transform:scale(1.8);}
+.hover-btn:focus-visible{outline:2px solid #1FBFD1;outline-offset:3px;}
+.hover-btn-sm{padding:.6rem 1.5rem;font-size:.85rem;}
+.footer-grid a.hover-btn{color:var(--hover-btn-ink);--hover-btn-fill:#05213F;}   /* darker than the light-theme footer */
+/* header quote link: keep the button's own colors over the navigation link styles */
+.navigation-links>li>a.navigation-quote.hover-btn,.navigation-links>li>a.navigation-quote.hover-btn:hover{
+  background:var(--hover-btn-bg);color:var(--hover-btn-ink);border-radius:999px;padding:12px 26px;
+}
+@media (prefers-reduced-motion:reduce){.hover-btn-label,.hover-btn-reveal,.hover-btn-dot{transition:none;}}
