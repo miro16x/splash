@@ -1,0 +1,12 @@
+{
+  "name": "splash",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/test-worker.mjs"
+  },
+  "dependencies": {
+    "postal-mime": "4.0.9"
+  }
+}

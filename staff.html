@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Quotes | Splash &amp; Dash</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" type="image/png" href="images/favicon-64.png" sizes="64x43">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lobster&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&amp;family=Plus+Jakarta+Sans:wght@400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap">
+<script>
+  (function(){
+    try {
+      var savedTheme = localStorage.getItem('splash-theme');
+      document.documentElement.dataset.theme = savedTheme === 'light' || savedTheme === 'dark'
+        ? savedTheme
+        : (window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+    } catch (e) {}
+  })();
+</script>
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/navigation.css">
+<style>
+  /* the views below set display:grid/flex, which would otherwise override the hidden attribute */
+  [hidden]{display:none !important;}
+  body{min-height:100vh;display:flex;flex-direction:column;}
+  .staff-bar{display:flex;align-items:center;gap:1rem;padding:.8rem clamp(1rem,3vw,2rem);background:var(--bg-raised);border-bottom:1px solid var(--border);}
+  .staff-brand{font:400 1.6rem/1 Lobster,cursive;color:var(--accent-strong);text-decoration:none;}
+  .staff-brand small{font:700 .72rem/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--text-soft);margin-left:.5rem;}
+  .staff-bar .spacer{flex:1;}
+  .user-menu{position:relative;}
+  .user-btn{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg);color:var(--text);padding:0;}
+  .user-btn svg{width:22px;height:22px;}
+  .user-btn:hover,.user-btn[aria-expanded=true]{border-color:var(--accent);}
+  .user-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .user-panel{position:absolute;right:0;top:calc(100% + .5rem);z-index:20;min-width:220px;max-width:min(300px,calc(100vw - 2rem));padding:.4rem;background:var(--bg-raised);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);}
+  .user-who{display:grid;gap:.1rem;padding:.6rem .75rem .7rem;border-bottom:1px solid var(--border-soft);margin-bottom:.3rem;}
+  .user-who strong,.user-who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .user-who span{font-size:.8rem;color:var(--text-soft);}
+  .user-who span:empty{display:none;}
+  .user-item{display:block;width:100%;text-align:left;background:none;border:0;border-radius:9px;padding:.6rem .75rem;color:var(--text);font:600 .9rem var(--font-body);}
+  .user-item:hover,.user-item:focus-visible{background:var(--border-soft);outline:none;}
+  .quotes-heading{margin:0;}
+  .quotes-toggle{display:inline-flex;align-items:center;gap:.6rem;background:var(--bg-raised);border:1.5px solid var(--border);border-radius:999px;padding:.5rem 1.1rem .5rem 1.4rem;color:var(--text);font:600 clamp(1.4rem,2.6vw,1.8rem)/1.2 var(--font-display);min-height:48px;}
+  .quotes-toggle:hover,.quotes-toggle[aria-expanded=true]{border-color:var(--accent);}
+  .quotes-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .quotes-toggle svg{width:1.05em;height:1.05em;transition:transform .2s ease;}
+  .quotes-toggle[aria-expanded=true] svg{transform:rotate(180deg);}
+  .ghost{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:999px;padding:.45rem .95rem;font:600 .85rem var(--font-body);min-height:40px;}
+  .ghost:hover{border-color:var(--accent);}
+  .ghost[aria-pressed=true]{background:var(--accent-strong);border-color:var(--accent-strong);color:#fff;}
+  .theme-btn{width:40px;padding:0;font-size:1.15rem;}
+
+  .center{flex:1;display:grid;place-items:center;padding:2rem 1rem;}
+  .card{background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);}
+  .login{width:min(420px,100%);padding:2rem;}
+  .login h1{font-size:1.8rem;margin-bottom:.4rem;}
+  .login p{color:var(--text-soft);margin-bottom:1.2rem;}
+  label{display:block;font-weight:600;font-size:.88rem;margin-bottom:.35rem;}
+  input[type=email],input[type=text],input[type=password],textarea{width:100%;font:inherit;color:var(--text);background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:.7rem .85rem;}
+  input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  textarea{min-height:9rem;resize:vertical;}
+  .note{font-size:.88rem;color:var(--text-soft);margin-top:.8rem;}
+  .note:empty{display:none;}
+  .field+.field{margin-top:.9rem;}
+  .text-link{display:block;margin:1rem auto 0;background:none;border:0;padding:.4rem;color:var(--accent-strong);font:600 .86rem var(--font-body);text-decoration:underline;text-underline-offset:3px;}
+  :root[data-theme=dark] .text-link{color:#7cc4f0;}
+  .form-actions{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:1.1rem;}
+  .note.error{color:#d33f22;}
+  :root[data-theme=dark] .note.error{color:#ff9b80;}
+
+  .staff-app{flex:1;display:flex;flex-direction:column;padding:1.2rem clamp(1rem,3vw,2rem) 2rem;gap:1rem;max-width:1400px;width:100%;margin:0 auto;}
+  .tabs{display:flex;gap:.5rem;flex-wrap:wrap;}
+  .tab{display:flex;align-items:center;gap:.55rem;background:var(--bg-raised);border:1.5px solid var(--border);color:var(--text);border-radius:999px;padding:.6rem 1.15rem;font:700 .95rem var(--font-body);min-height:44px;}
+  .tab[aria-selected=true]{border-color:var(--accent-strong);background:var(--accent-strong);color:#fff;}
+  .count{background:var(--aqua);color:#05213f;border-radius:999px;font-size:.75rem;padding:.1rem .5rem;min-width:1.5rem;text-align:center;}
+  .count:empty{display:none;}
+  .toolbar{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;}
+  .toolbar .spacer{flex:1;}
+
+  .panes{flex:1;display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:1rem;min-height:0;}
+  .list{padding:.4rem;overflow:auto;max-height:calc(100vh - 230px);}
+  .list-empty{padding:2rem 1rem;color:var(--text-soft);text-align:center;}
+  .item{display:block;width:100%;text-align:left;background:transparent;border:0;border-radius:12px;padding:.8rem .9rem;color:var(--text);font:inherit;}
+  .item+.item{border-top:1px solid var(--border-soft);}
+  .item:hover{background:var(--border-soft);}
+  .item[aria-current=true]{background:color-mix(in srgb,var(--accent) 16%,transparent);}
+  .item-top{display:flex;justify-content:space-between;gap:.6rem;align-items:baseline;}
+  .item-name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .item-date{font-size:.78rem;color:var(--text-soft);white-space:nowrap;}
+  .item-sub{font-size:.85rem;color:var(--text-soft);display:flex;gap:.5rem;align-items:center;margin-top:.2rem;}
+  .pill{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:.12rem .5rem;white-space:nowrap;}
+  .pill.open{background:#ffe3d9;color:#a3301a;}
+  .pill.waiting{background:#dceefc;color:#0a4f8a;}
+  .pill.closed{background:var(--border-soft);color:var(--text-soft);}
+  :root[data-theme=dark] .pill.open{background:rgba(255,130,100,.2);color:#ffb59f;}
+  :root[data-theme=dark] .pill.waiting{background:rgba(90,169,230,.2);color:#a9d3f5;}
+
+  .detail{padding:clamp(1.1rem,2.5vw,2rem);overflow:auto;max-height:calc(100vh - 230px);}
+  .detail-empty{display:grid;place-items:center;color:var(--text-soft);min-height:300px;text-align:center;}
+  .back{display:none;margin-bottom:1rem;}
+  .detail-head{display:flex;flex-wrap:wrap;gap:.8rem 1.2rem;align-items:flex-start;justify-content:space-between;margin-bottom:1.2rem;}
+  .detail-head h2{font-size:1.7rem;}
+  .contact{display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;margin-top:.45rem;font-size:.92rem;}
+  .contact a{color:var(--accent-strong);}
+  :root[data-theme=dark] .contact a{color:#7cc4f0;}
+  .status-actions{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;}
+  h3.detail-label{font:700 .78rem/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--text-soft);margin:1.6rem 0 .7rem;}
+  .fields th,.fields td{text-align:left;vertical-align:top;padding:.5rem .6rem;border-bottom:1px solid var(--border-soft);font-size:.92rem;}
+  .fields th{width:34%;color:var(--text-soft);font-weight:600;}
+  .fields td{white-space:pre-wrap;overflow-wrap:anywhere;}
+  .files{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.6rem;}
+  .file{display:block;border:1px solid var(--border);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);background:var(--bg);}
+  .file img{width:100%;aspect-ratio:4/3;object-fit:cover;}
+  .file span{display:block;padding:.4rem .55rem;font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .file .doc{aspect-ratio:4/3;display:grid;place-items:center;font-weight:700;color:var(--text-soft);}
+  .thread{display:flex;flex-direction:column;gap:.7rem;}
+  .msg{max-width:85%;border-radius:14px;padding:.75rem .95rem;border:1px solid var(--border);background:var(--bg);}
+  .msg.outbound{align-self:flex-end;background:color-mix(in srgb,var(--accent-strong) 12%,var(--bg-raised));border-color:color-mix(in srgb,var(--accent-strong) 35%,transparent);}
+  .msg-meta{font-size:.76rem;color:var(--text-soft);margin-bottom:.3rem;}
+  .msg-body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.94rem;}
+  .thread-empty{color:var(--text-soft);font-size:.92rem;}
+  .reply{margin-top:1rem;display:grid;gap:.8rem;}
+  .compose-modes{display:flex;gap:.4rem;flex-wrap:wrap;}
+  .msg-pdf{display:flex;align-items:center;gap:.6rem;margin-top:.6rem;padding:.5rem .7rem;border:1px solid var(--border);border-radius:10px;background:var(--bg-raised);color:var(--text);text-decoration:none;font-size:.88rem;}
+  a.msg-pdf:hover{border-color:var(--accent);}
+  .msg-pdf strong{font-size:.7rem;letter-spacing:.08em;background:#d33f22;color:#fff;border-radius:5px;padding:.15rem .4rem;}
+
+  /* quote builder (assets/staff-quote.js) */
+  .qb{margin-top:1rem;display:grid;gap:.5rem;}
+  .qb h4{font:700 .74rem/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--text-soft);margin:1rem 0 .2rem;}
+  .qb h4:first-child{margin-top:0;}
+  .qb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.7rem;}
+  .qb-field{display:flex;flex-direction:column;gap:.3rem;}
+  .qb-field label{margin:0;}
+  .qb select,.qb input[type=number],.qb input[type=date]{width:100%;font:inherit;color:var(--text);background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:.65rem .8rem;}
+  .qb input[readonly]{opacity:.75;}
+  .qb-hint{font-size:.78rem;color:var(--text-soft);}
+  .qb-hint:empty{display:none;}
+  .qb-scope{display:grid;gap:.7rem;}
+  .qb-checks{border:1px solid var(--border-soft);border-radius:12px;padding:.6rem .8rem .7rem;margin:0;display:flex;flex-wrap:wrap;gap:.35rem 1.1rem;}
+  .qb-checks legend{font-weight:600;font-size:.85rem;padding:0 .3rem;}
+  .qb-check{display:inline-flex;align-items:center;gap:.4rem;font-weight:500;font-size:.9rem;margin:0;cursor:pointer;}
+  .qb-check input{width:1.05rem;height:1.05rem;accent-color:var(--accent-strong);}
+  .qb-total{font-size:1.05rem;margin-top:.3rem;}
+  .qb-total strong{font-size:1.2rem;}
+  .reply-actions{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+  .reply-actions .note{margin:0;}
+  .hover-btn[disabled]{opacity:.6;cursor:progress;}
+
+  @media (max-width:820px){
+    .panes{grid-template-columns:1fr;}
+    .list,.detail{max-height:none;}
+    .panes.showing-detail .list{display:none;}
+    .panes:not(.showing-detail) .detail{display:none;}
+    .back{display:inline-flex;}
+    .msg{max-width:100%;}
+  }
+</style>
+</head>
+<body>
+  <header class="staff-bar">
+    <a class="staff-brand" href="index.html">Splash and Dash<small>Staff</small></a>
+    <span class="spacer"></span>
+    <button class="ghost theme-btn" type="button" id="themeToggle" aria-label="Switch color theme">◐</button>
+    <div class="user-menu" id="userMenu" hidden>
+      <button class="user-btn" type="button" id="userBtn" aria-haspopup="true" aria-expanded="false" aria-controls="userPanel" aria-label="Account menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+      </button>
+      <div class="user-panel" id="userPanel" hidden>
+        <div class="user-who"><strong id="staffUser"></strong><span id="staffEmail"></span></div>
+        <button type="button" class="user-item" id="changePassword">Change password</button>
+        <button type="button" class="user-item" id="signOut">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="center" id="loginView" hidden>
+    <form class="card login" id="loginForm">
+      <h1>Staff sign in</h1>
+      <p>Sign in with your staff email and password.</p>
+      <div class="field">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" required>
+      </div>
+      <div style="margin-top:1.1rem;">
+        <button class="hover-btn" type="submit" id="loginBtn" style="width:100%;">
+          <span class="hover-btn-label" data-label>Sign in</span>
+          <span class="hover-btn-reveal" aria-hidden="true"><span data-label>Sign in</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          <span class="hover-btn-dot" aria-hidden="true"></span>
+        </button>
+      </div>
+      <button class="text-link" type="button" id="linkBtn">Forgot your password? Email me a sign-in link</button>
+      <p class="note" id="loginNote" role="status"></p>
+    </form>
+  </main>
+
+  <main class="center" id="passwordView" hidden>
+    <form class="card login" id="passwordForm">
+      <h1>Change password</h1>
+      <p>Choose a password you'll use to sign in from now on.</p>
+      <div class="field">
+        <label for="newPassword">New password</label>
+        <input type="password" id="newPassword" autocomplete="new-password" minlength="8" required>
+      </div>
+      <div class="field">
+        <label for="confirmPassword">Confirm new password</label>
+        <input type="password" id="confirmPassword" autocomplete="new-password" minlength="8" required>
+      </div>
+      <div class="form-actions">
+        <button class="hover-btn hover-btn-sm" type="submit" id="passwordBtn">
+          <span class="hover-btn-label" data-label>Save password</span>
+          <span class="hover-btn-reveal" aria-hidden="true"><span data-label>Save password</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          <span class="hover-btn-dot" aria-hidden="true"></span>
+        </button>
+        <button class="ghost" type="button" id="passwordCancel">Back to quotes</button>
+      </div>
+      <p class="note" id="passwordNote" role="status"></p>
+    </form>
+  </main>
+
+  <main class="center" id="messageView" hidden>
+    <div class="card login"><h1 id="messageTitle"></h1><p id="messageText"></p></div>
+  </main>
+
+  <main class="staff-app" id="appView" hidden>
+    <h1 class="quotes-heading">
+      <button class="quotes-toggle" type="button" id="quotesToggle" aria-expanded="false" aria-controls="tabs">
+        Quotes
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+    </h1>
+    <div class="tabs" role="tablist" aria-labelledby="quotesToggle" id="tabs" hidden></div>
+    <div class="toolbar">
+      <div class="status-actions" role="group" aria-label="Filter by status" id="filters"></div>
+      <span class="spacer"></span>
+      <button class="ghost" type="button" id="refresh">Refresh</button>
+    </div>
+    <div class="panes" id="panes">
+      <div class="card list" id="list" aria-label="Quotes"></div>
+      <section class="card detail" id="detail" aria-live="polite"></section>
+    </div>
+  </main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js" integrity="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI" crossorigin="anonymous"></script>
+<script src="assets/staff-quote.js"></script>
+<script>
+(function(){
+  var SERVICES = [
+    {id:'vinyl', label:'Vinyl Wraps'},
+    {id:'ceramic', label:'Ceramic Coatings'},
+    {id:'correction', label:'Paint Correction'},
+    {id:'other', label:'Other'}
+  ];
+  var FILTERS = [{id:'open', label:'Needs reply'}, {id:'waiting', label:'Waiting on customer'}, {id:'closed', label:'Closed'}, {id:'all', label:'All'}];
+  var STATUS_LABELS = {open:'Needs reply', waiting:'Waiting', closed:'Closed'};
+  var client, session, quotes = [], service = 'vinyl', filter = 'open', selectedId = null, pollTimer;
+
+  function $(id){ return document.getElementById(id); }
+  // Builds DOM with textContent only, so customer-entered text can never become markup.
+  function el(tag, props){
+    var node = document.createElement(tag);
+    Object.keys(props || {}).forEach(function(key){
+      if (key === 'text') node.textContent = props[key];
+      else if (key === 'on') Object.keys(props.on).forEach(function(evt){ node.addEventListener(evt, props.on[evt]); });
+      else if (key in node && key !== 'list') node[key] = props[key];
+      else node.setAttribute(key, props[key]);
+    });
+    for (var i = 2; i < arguments.length; i++) if (arguments[i] != null) node.append(arguments[i]);
+    return node;
+  }
+  function when(iso){
+    var d = new Date(iso), today = new Date();
+    return d.toDateString() === today.toDateString()
+      ? d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})
+      : d.toLocaleDateString([], {month:'short', day:'numeric', year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric'});
+  }
+  function whenLong(iso){ return new Date(iso).toLocaleString([], {dateStyle:'medium', timeStyle:'short'}); }
+  function show(view){ ['loginView','passwordView','messageView','appView'].forEach(function(id){ $(id).hidden = id !== view; }); }
+  function message(title, text){ $('messageTitle').textContent = title; $('messageText').textContent = text; show('messageView'); }
+  function setLabel(button, text){ button.querySelectorAll('[data-label]').forEach(function(n){ n.textContent = text; }); }
+
+  $('themeToggle').addEventListener('click', function(){
+    var value = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = value;
+    try { localStorage.setItem('splash-theme', value); } catch (e) {}
+  });
+
+  // ---------- sign in ----------
+  function loginError(text){ var note = $('loginNote'); note.className = 'note error'; note.textContent = text; }
+
+  $('loginForm').addEventListener('submit', async function(event){
+    event.preventDefault();
+    var button = $('loginBtn');
+    $('loginNote').textContent = '';
+    button.disabled = true; setLabel(button, 'Signing in…');
+    var result = await client.auth.signInWithPassword({email: $('loginEmail').value.trim(), password: $('loginPassword').value});
+    button.disabled = false; setLabel(button, 'Sign in');
+    if (!result.error) { $('loginPassword').value = ''; return; }
+    var reason = result.error.message || '';
+    loginError(/invalid login credentials/i.test(reason)
+      ? 'That email and password don\'t match a staff account. Forgot your password? Use the sign-in link below.'
+      : /rate limit|too many/i.test(reason)
+        ? 'Too many sign-in attempts. Wait a few minutes and try again.'
+        : 'We couldn\'t sign you in (' + reason + '). Please try again.');
+  });
+
+  // Backup for a forgotten password: a one-time link, after which staff can set a new password.
+  $('linkBtn').addEventListener('click', async function(){
+    var email = $('loginEmail');
+    var note = $('loginNote'), button = this;
+    if (!email.value.trim() || !email.checkValidity()) { loginError('Enter your staff email above first.'); email.focus(); return; }
+    note.className = 'note'; note.textContent = '';
+    button.disabled = true;
+    var result = await client.auth.signInWithOtp({
+      email: email.value.trim(),
+      options: {shouldCreateUser: false, emailRedirectTo: location.origin + '/staff.html'}
+    });
+    button.disabled = false;
+    if (result.error) {
+      var reason = result.error.message || '';
+      note.className = 'note error';
+      note.textContent = /signups? not allowed|user not found/i.test(reason)
+        ? 'That email doesn\'t have a staff account yet. Ask the owner to invite you in Supabase.'
+        : /after (\d+) seconds/i.test(reason)
+          ? 'A link was just sent to this address. Wait ' + /after (\d+) seconds/i.exec(reason)[1] + ' seconds before asking for another.'
+        : /rate limit|too many/i.test(reason)
+          ? 'Too many sign-in emails were sent recently. Wait a few minutes and try again.'
+          : 'We couldn\'t send a sign-in link (' + reason + '). Please try again.';
+    } else {
+      note.textContent = 'Check your email for a sign-in link. Once you\'re in, use Change password to set a new one.';
+    }
+  });
+  $('signOut').addEventListener('click', function(){ closeUserMenu(); client.auth.signOut(); });
+
+  // ---------- quote types ----------
+  $('quotesToggle').addEventListener('click', function(){
+    var open = this.getAttribute('aria-expanded') !== 'true';
+    this.setAttribute('aria-expanded', String(open));
+    $('tabs').hidden = !open;
+  });
+
+  // ---------- account menu ----------
+  function closeUserMenu(){ $('userPanel').hidden = true; $('userBtn').setAttribute('aria-expanded', 'false'); }
+  $('userBtn').addEventListener('click', function(){
+    var open = $('userPanel').hidden;
+    $('userPanel').hidden = !open; this.setAttribute('aria-expanded', String(open));
+    if (open) $('userPanel').querySelector('.user-item:not([hidden])').focus();
+  });
+  document.addEventListener('click', function(event){ if (!$('userMenu').contains(event.target)) closeUserMenu(); });
+  document.addEventListener('keydown', function(event){
+    if (event.key === 'Escape' && !$('userPanel').hidden) { closeUserMenu(); $('userBtn').focus(); }
+  });
+
+  // ---------- change password ----------
+  $('changePassword').addEventListener('click', function(){
+    closeUserMenu();
+    $('passwordForm').reset(); $('passwordNote').textContent = '';
+    show('passwordView'); $('newPassword').focus();
+  });
+  $('passwordCancel').addEventListener('click', function(){ show('appView'); });
+  $('passwordForm').addEventListener('submit', async function(event){
+    event.preventDefault();
+    var note = $('passwordNote'), button = $('passwordBtn');
+    note.className = 'note error';
+    if ($('newPassword').value !== $('confirmPassword').value) { note.textContent = 'The two passwords don\'t match.'; return; }
+    note.textContent = '';
+    button.disabled = true; setLabel(button, 'Saving…');
+    var result = await client.auth.updateUser({password: $('newPassword').value});
+    button.disabled = false; setLabel(button, 'Save password');
+    if (result.error) { note.textContent = 'Couldn\'t save the password (' + result.error.message + ').'; return; }
+    $('passwordForm').reset();
+    note.className = 'note'; note.textContent = 'Password saved. Use it next time you sign in.';
+  });
+
+  async function onSession(next){
+    // Supabase re-announces SIGNED_IN when the tab regains focus; don't rebuild the page (and lose a draft) for that.
+    if (next && session && next.user.id === session.user.id) { session = next; return; }
+    session = next;
+    closeUserMenu();
+    $('userMenu').hidden = !session;
+    $('changePassword').hidden = true;
+    $('staffUser').textContent = $('staffEmail').textContent = '';
+    window.clearInterval(pollTimer);
+    if (!session) { show('loginView'); return; }
+    var staff = await client.from('staff').select('user_id,name').eq('user_id', session.user.id);
+    if (staff.error || !staff.data.length) {
+      $('staffUser').textContent = session.user.email;
+      message('No staff access', 'You\'re signed in as ' + session.user.email + ', but this account isn\'t on the staff list. Ask the owner to add you.');
+      return;
+    }
+    var name = (staff.data[0].name || '').trim();
+    $('staffUser').textContent = name || session.user.email;
+    if (name) $('staffEmail').textContent = session.user.email;
+    $('changePassword').hidden = false;
+    show('appView');
+    var pending = null;
+    try { pending = localStorage.getItem('staff-open-quote'); localStorage.removeItem('staff-open-quote'); } catch (e) {}
+    await loadQuotes();
+    if (pending) openQuote(pending);
+    else renderDetail(null);
+    pollTimer = window.setInterval(function(){ if (!document.hidden) loadQuotes(); }, 60000);
+  }
+
+  // ---------- list ----------
+  async function loadQuotes(){
+    var result = await client.from('quotes')
+      .select('id,created_at,service,status,customer_name,vehicle,last_message_at')
+      .order('last_message_at', {ascending:false}).limit(500);
+    if (result.error) { $('list').replaceChildren(el('p', {className:'list-empty', text:'Couldn\'t load quotes. Try Refresh.'})); return; }
+    quotes = result.data;
+    renderTabs(); renderFilters(); renderList();
+  }
+
+  function renderTabs(){
+    $('tabs').replaceChildren.apply($('tabs'), SERVICES.filter(function(s){
+      return s.id !== 'other' || quotes.some(function(q){ return q.service === 'other'; });
+    }).map(function(s){
+      var open = quotes.filter(function(q){ return q.service === s.id && q.status === 'open'; }).length;
+      return el('button', {type:'button', className:'tab', role:'tab', 'aria-selected': String(s.id === service),
+        on:{click:function(){ service = s.id; renderTabs(); renderList(); }}},
+        s.label, el('span', {className:'count', 'aria-label': open + ' need a reply', text: open ? String(open) : ''}));
+    }));
+  }
+
+  function renderFilters(){
+    $('filters').replaceChildren.apply($('filters'), FILTERS.map(function(f){
+      return el('button', {type:'button', className:'ghost', 'aria-pressed': String(f.id === filter), text:f.label,
+        on:{click:function(){ filter = f.id; renderFilters(); renderList(); }}});
+    }));
+  }
+
+  function renderList(){
+    var shown = quotes.filter(function(q){ return q.service === service && (filter === 'all' || q.status === filter); });
+    var list = $('list');
+    if (!shown.length) {
+      list.replaceChildren(el('p', {className:'list-empty', text: filter === 'open' ? 'Nothing needs a reply here.' : 'No quotes here yet.'}));
+      return;
+    }
+    list.replaceChildren.apply(list, shown.map(function(q){
+      return el('button', {type:'button', className:'item', 'aria-current': String(q.id === selectedId), on:{click:function(){ openQuote(q.id); }}},
+        el('div', {className:'item-top'}, el('span', {className:'item-name', text:q.customer_name}), el('span', {className:'item-date', text:when(q.last_message_at)})),
+        el('div', {className:'item-sub'}, el('span', {className:'pill ' + q.status, text:STATUS_LABELS[q.status]}), el('span', {text:q.vehicle || ''})));
+    }));
+  }
+
+  // ---------- detail ----------
+  function renderDetail(content){
+    var detail = $('detail');
+    $('panes').classList.toggle('showing-detail', !!content);
+    if (!content) { detail.replaceChildren(el('div', {className:'detail-empty', text:'Pick a quote to see the details and message the customer.'})); return; }
+    detail.replaceChildren(content);
+    detail.scrollTop = 0;
+  }
+
+  async function openQuote(id){
+    selectedId = id;
+    history.replaceState(null, '', '#quote=' + id);
+    var results = await Promise.all([
+      client.from('quotes').select('*').eq('id', id).maybeSingle(),
+      client.from('quote_messages').select('*').eq('quote_id', id).order('created_at')
+    ]);
+    var quote = results[0].data, messages = results[1].data || [];
+    if (!quote) { renderDetail(el('p', {className:'detail-empty', text:'That quote couldn\'t be found.'})); return; }
+    if (quote.service !== service) { service = quote.service; renderTabs(); }
+    renderList();
+    // One batch of signed links for the customer's uploads and any quote PDFs staff sent.
+    var paths = quote.files.map(function(f){ return f.path; })
+      .concat(messages.filter(function(m){ return m.attachment; }).map(function(m){ return m.attachment.path; }));
+    var signed = {};
+    if (paths.length) {
+      var urls = await client.storage.from('quote-files').createSignedUrls(paths, 3600);
+      (urls.data || []).forEach(function(u){ if (u.signedUrl) signed[u.path] = u.signedUrl; });
+    }
+    renderDetail(quoteView(quote, messages, signed));
+  }
+
+  // Emails the customer through the Worker (optionally with a quote PDF), then reloads the conversation.
+  async function sendToCustomer(quote, payload){
+    var token = (await client.auth.getSession()).data.session.access_token;
+    var response = await fetch('/api/staff/reply', {
+      method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer ' + token},
+      body: JSON.stringify(Object.assign({quoteId: quote.id}, payload))
+    });
+    var result = await response.json().catch(function(){ return {}; });
+    if (!response.ok) throw new Error(result.message || 'The email could not be sent.');
+    quotes.forEach(function(q){ if (q.id === quote.id) { q.status = 'waiting'; q.last_message_at = new Date().toISOString(); } });
+    renderTabs();
+    await openQuote(quote.id);
+  }
+
+  function setStatus(quote, status){
+    return client.from('quotes').update({status: status}).eq('id', quote.id).then(function(result){
+      if (result.error) return alert('Couldn\'t update the status. Please try again.');
+      quotes.forEach(function(q){ if (q.id === quote.id) q.status = status; });
+      renderTabs(); openQuote(quote.id);
+    });
+  }
+
+  function quoteView(quote, messages, signed){
+    var wrap = el('div');
+    wrap.append(el('button', {type:'button', className:'ghost back', text:'← All quotes', on:{click:function(){ selectedId = null; history.replaceState(null, '', location.pathname); renderList(); renderDetail(null); }}}));
+
+    var actions = el('div', {className:'status-actions'}, el('span', {className:'pill ' + quote.status, text:STATUS_LABELS[quote.status]}));
+    if (quote.status !== 'closed') actions.append(el('button', {type:'button', className:'ghost', text:'Mark closed', on:{click:function(){ setStatus(quote, 'closed'); }}}));
+    else actions.append(el('button', {type:'button', className:'ghost', text:'Reopen', on:{click:function(){ setStatus(quote, 'open'); }}}));
+    if (quote.status === 'open') actions.append(el('button', {type:'button', className:'ghost', text:'No reply needed', on:{click:function(){ setStatus(quote, 'waiting'); }}}));
+
+    wrap.append(el('div', {className:'detail-head'},
+      el('div', null,
+        el('h2', {text:quote.customer_name}),
+        el('div', {className:'contact'},
+          el('a', {href:'mailto:' + quote.email, text:quote.email}),
+          quote.phone ? el('a', {href:'tel:' + quote.phone.replace(/[^\d+]/g, ''), text:quote.phone}) : null,
+          el('span', {text:'Received ' + whenLong(quote.created_at)}))),
+      actions));
+
+    wrap.append(el('h3', {className:'detail-label', text:'Request'}));
+    var table = el('table', {className:'fields'});
+    quote.fields.forEach(function(row){
+      if (row[0] === 'Customer Name' || row[0] === 'Email' || row[0] === 'Phone #' || row[0] === 'Contact Consent') return;
+      table.append(el('tr', null, el('th', {scope:'row', text:row[0]}), el('td', {text:row[1]})));
+    });
+    wrap.append(table);
+
+    if (quote.files.length) {
+      wrap.append(el('h3', {className:'detail-label', text:'Photos & artwork'}));
+      var files = el('div', {className:'files'});
+      quote.files.forEach(function(file){
+        var url = signed[file.path];
+        if (!url) return;
+        files.append(el('a', {className:'file', href:url, target:'_blank', rel:'noopener noreferrer'},
+          file.type.indexOf('image/') === 0 ? el('img', {src:url, alt:file.name, loading:'lazy'}) : el('div', {className:'doc', text:'PDF'}),
+          el('span', {text:file.name})));
+      });
+      wrap.append(files);
+    }
+
+    wrap.append(el('h3', {className:'detail-label', text:'Conversation'}));
+    var thread = el('div', {className:'thread'});
+    if (!messages.length) thread.append(el('p', {className:'thread-empty', text:'No messages yet. Your reply will be emailed to ' + quote.email + ', and their answer will show up here.'}));
+    messages.forEach(function(m){
+      var pdf = null;
+      if (m.document) {
+        var url = m.attachment && signed[m.attachment.path];
+        var label = 'Quote ' + m.document.number + (m.document.total ? ' · ' + money(m.document.total) : '');
+        pdf = url
+          ? el('a', {className:'msg-pdf', href:url, target:'_blank', rel:'noopener noreferrer'}, el('strong', {text:'PDF'}), el('span', {text:label}))
+          : el('div', {className:'msg-pdf'}, el('strong', {text:'PDF'}), el('span', {text:label + ' (copy not saved)'}));
+      }
+      thread.append(el('div', {className:'msg ' + m.direction},
+        el('div', {className:'msg-meta', text:(m.direction === 'outbound' ? 'Sent by ' + m.author : 'From ' + m.author) + ' · ' + whenLong(m.created_at)}),
+        el('div', {className:'msg-body', text:m.body}), pdf));
+    });
+    wrap.append(thread);
+    wrap.append(composer(quote, messages));
+    return wrap;
+  }
+  function money(n){ return '$' + Number(n).toLocaleString('en-US', {maximumFractionDigits: 2}); }
+
+  // Compose area: a plain email, or (for services with a template) a filled-in quote PDF.
+  function composer(quote, messages){
+    var first = quote.customer_name.split(' ')[0];
+    var reply = replyForm(quote, messages);
+    if (!window.StaffQuote || !StaffQuote.supports(quote.service)) {
+      return el('div', null, el('h3', {className:'detail-label', text:'Email ' + first}), reply);
+    }
+    var builder = null;
+    var holder = el('div', null, reply);
+    var modes = el('div', {className:'compose-modes', role:'group', 'aria-label':'What to send'});
+    [['message', 'Write a message'], ['quote', 'Send a quote']].forEach(function(m, i){
+      modes.append(el('button', {type:'button', className:'ghost', 'aria-pressed': String(i === 0), text:m[1], on:{click:function(){
+        modes.querySelectorAll('button').forEach(function(b){ b.setAttribute('aria-pressed', String(b === this)); }, this);
+        if (m[0] === 'quote' && !builder) builder = StaffQuote.builder({
+          quote: quote, messages: messages, staffName: $('staffUser').textContent,
+          send: function(payload){ return sendToCustomer(quote, payload); }
+        });
+        holder.replaceChildren(m[0] === 'quote' ? builder : reply);
+      }}}));
+    });
+    return el('div', null, el('h3', {className:'detail-label', text:'Email ' + first}), modes, holder);
+  }
+
+  function replyForm(quote, messages){
+    var last = messages.filter(function(m){ return m.subject; }).pop();
+    var subject = el('input', {type:'text', id:'replySubject', maxLength:200,
+      value: last ? (/^re:/i.test(last.subject) ? last.subject : 'Re: ' + last.subject) : ''});
+    subject.placeholder = 'Your Splash and Dash quote';
+    var body = el('textarea', {id:'replyBody', required:true, maxLength:10000});
+    body.placeholder = 'Hi ' + quote.customer_name.split(' ')[0] + ',';
+    var note = el('p', {className:'note', role:'status'});
+    var button = el('button', {type:'submit', className:'hover-btn hover-btn-sm'},
+      el('span', {className:'hover-btn-label', 'data-label':'', text:'Send message'}),
+      el('span', {className:'hover-btn-reveal', 'aria-hidden':'true'}, el('span', {'data-label':'', text:'Send message'})),
+      el('span', {className:'hover-btn-dot', 'aria-hidden':'true'}));
+    var form = el('form', {className:'reply'},
+      el('div', null, el('label', {htmlFor:'replySubject', text:'Subject'}), subject),
+      el('div', null, el('label', {htmlFor:'replyBody', text:'Message'}), body),
+      el('div', {className:'reply-actions'}, button, note));
+    form.addEventListener('submit', async function(event){
+      event.preventDefault();
+      if (!body.value.trim()) return;
+      button.disabled = true; setLabel(button, 'Sending…'); note.className = 'note'; note.textContent = '';
+      try {
+        await sendToCustomer(quote, {subject: subject.value, message: body.value});
+      } catch (error) {
+        button.disabled = false; setLabel(button, 'Send message');
+        note.className = 'note error'; note.textContent = error.message + ' Your message is still here.';
+      }
+    });
+    return form;
+  }
+
+  $('refresh').addEventListener('click', async function(){ await loadQuotes(); if (selectedId) openQuote(selectedId); });
+
+  // ---------- start ----------
+  // Links in the alert emails open a quote (#quote=…); remember it across the sign-in link round trip.
+  var linked = /quote=([0-9a-f-]{36})/i.exec(location.hash);
+  if (linked) try { localStorage.setItem('staff-open-quote', linked[1]); } catch (e) {}
+  fetch('/api/staff/config').then(function(r){ return r.json(); }).then(function(config){
+    if (!config.success) throw new Error();
+    client = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+    client.auth.onAuthStateChange(function(event, next){
+      // Defer so Supabase finishes its own state update before we query with the new session.
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') window.setTimeout(function(){ onSession(next); });
+    });
+  }).catch(function(){
+    message('Staff page unavailable', 'The staff page isn\'t set up yet. See DEPLOYMENT.md for the Supabase settings.');
+  });
+})();
+</script>
+</body>
+</html>
