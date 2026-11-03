@@ -241,7 +241,11 @@
             I consent to be contacted about this quote request and agree to the privacy policy.
           </label>
 
-          <button type="submit" class="btn btn-cta btn-block" style="margin-top:1.2rem;">Submit Quote Request</button>
+          <button type="submit" class="hover-btn" style="margin-top:1.2rem;width:100%;">
+            <span class="hover-btn-label" data-submit-label>Submit Quote Request</span>
+            <span class="hover-btn-reveal" aria-hidden="true"><span data-submit-label>Submit Quote Request</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            <span class="hover-btn-dot" aria-hidden="true"></span>
+          </button>
 
           <div class="form-confirm" id="quote-confirmation" role="status" tabindex="-1">
             <strong>Your request has been received.</strong>

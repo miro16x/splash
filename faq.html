@@ -10,6 +10,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&amp;family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap">
+  <script>
+    (function(){
+      try {
+        var savedTheme = localStorage.getItem('splash-theme');
+        document.documentElement.dataset.theme = savedTheme === 'light' || savedTheme === 'dark'
+          ? savedTheme
+          : (window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+      } catch (e) {}
+    })();
+  </script>
   <style>
     :root{--ocean:#0a3b73;--mid:#0f5fa8;--aqua:#1fbfd1;--ink:#0b2036;--soft:#3e5972;--foam:#f5fafb;--white:#fff;--border:#d4e2e7}
     *{box-sizing:border-box}body{margin:0;background:var(--foam);color:var(--ink);font:16px/1.7 'Plus Jakarta Sans',sans-serif}a{color:var(--ocean)}
@@ -17,7 +27,7 @@
     main{max-width:940px;margin:clamp(2rem,6vw,5rem) auto;padding:0 1.4rem}.faq-card{background:var(--white);border:1px solid var(--border);border-radius:24px;padding:clamp(1.5rem,5vw,4rem);box-shadow:0 20px 45px -28px rgba(10,59,115,.45)}
     .eyebrow{color:var(--mid);font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase}h1{font:600 clamp(2.2rem,6vw,4rem)/1.15 Fraunces,Georgia,serif;margin:.35rem 0 .7rem}.intro{color:var(--soft);max-width:65ch;margin:0 0 2rem}
     details{border-top:1px solid var(--border)}details:last-of-type{border-bottom:1px solid var(--border)}summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.25rem 0;font:600 1.08rem/1.4 Fraunces,Georgia,serif}summary::-webkit-details-marker{display:none}summary::after{content:'+';color:var(--mid);font:400 1.6rem/1 'Plus Jakarta Sans',sans-serif;transition:transform .2s}details[open] summary::after{transform:rotate(45deg)}details p{color:var(--soft);max-width:70ch;margin:0;padding:0 2.2rem 1.35rem 0}
-    .cta{margin-top:2.5rem;padding:1.3rem;border-radius:16px;background:#eefafb;border-left:4px solid var(--aqua)}.cta p{margin:0 0 .8rem;color:var(--soft)}.button{display:inline-block;background:linear-gradient(180deg,var(--mid),var(--ocean));color:#fff;text-decoration:none;font-weight:700;padding:.72rem 1.25rem;border-radius:999px}
+    .cta{margin-top:2.5rem;padding:1.3rem;border-radius:16px;background:#eefafb;border-left:4px solid var(--aqua)}.cta p{margin:0 0 .8rem;color:var(--soft)}
     footer{text-align:center;padding:2rem 1.4rem;color:var(--soft);font-size:.85rem}.skip{position:absolute;left:-999px;top:0}.skip:focus{left:1rem;top:1rem;z-index:10;background:#fff;color:var(--ocean);padding:.7rem 1rem;border-radius:8px}@media(max-width:520px){.nav img{width:120px}.back{font-size:.88rem}}
     main{overflow-wrap:anywhere;}
     .nav > *{min-width:0;}
@@ -26,6 +36,11 @@
       .nav{padding-inline:1rem;}.nav img{width:110px;height:auto;}.back{font-size:.88rem;}
       main{padding-inline:1rem;}.policy,.faq-card{padding:1.25rem;}
     }
+    /* dark theme, matching the palette in assets/site.css */
+    :root[data-theme=dark]{--mid:#5aa9e6;--aqua:#3fd8e8;--ink:#eaf4f7;--soft:#9fc0d2;--foam:#071a2c;--white:#0d2a44;--border:rgba(255,255,255,.14);color-scheme:dark}
+    :root[data-theme=dark] main a:not(.hover-btn){color:#7cc4f0}
+    :root[data-theme=dark] .policy,:root[data-theme=dark] .faq-card{box-shadow:0 20px 45px -18px rgba(0,0,0,.6)}
+    :root[data-theme=dark] .notice,:root[data-theme=dark] .cta{background:rgba(63,216,232,.08)}
   </style>
 <link rel="stylesheet" href="assets/navigation.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lobster&amp;display=swap"></head>
 <body>
@@ -69,7 +84,7 @@
       <p>Please inspect your vehicle at pickup and tell us promptly about any concern. We will evaluate it in good faith and, when appropriate, offer a reasonable correction of the affected work. Specific warranties must be provided in writing.</p>
     </details>
 
-    <div class="cta"><p>Still have a question or ready to discuss your vehicle?</p><a class="button" href="quote.html">Request a Quote</a></div>
+    <div class="cta"><p>Still have a question or ready to discuss your vehicle?</p><a class="hover-btn hover-btn-sm" href="quote.html"><span class="hover-btn-label">Request a Quote</span><span class="hover-btn-reveal" aria-hidden="true"><span>Request a Quote</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span><span class="hover-btn-dot" aria-hidden="true"></span></a></div>
   </article></main>
   <footer>© 2026 Splash &amp; Dash Car Wash &amp; Auto Detail Center.</footer>
 <script src="assets/navigation.js"></script></body>
