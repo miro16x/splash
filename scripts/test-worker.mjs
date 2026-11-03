@@ -39,4 +39,97 @@ try {
   assert.equal((await worker.fetch(new Request(env.SITE_ORIGIN+'/api/quote-files/'+'a'.repeat(32)),env)).status,404);
   assert.equal((await worker.fetch(new Request(env.SITE_ORIGIN+'/api/quote-files/invalid'),env)).status,404);
   console.log('Passed: all three services, optional photos, attachment bytes, artwork, unsupported types, assets, origin, escaped HTML, logo, reply-to, provider failures.');
+
+  // ---------- Supabase: saving quotes, staff replies, inbound email ----------
+  const sbEnv = {...env, SUPABASE_URL:'https://sb.test', SUPABASE_ANON_KEY:'anon', SUPABASE_SERVICE_ROLE_KEY:'service', REPLY_DOMAIN:'splashanddash.uluxe.site'};
+  const quoteId = '11111111-2222-4333-8444-555555555555';
+  let calls, staffRows;
+  const fakeSupabase = async (url, options = {}) => {
+    calls.push({url, method: options.method || 'GET', body: options.body, headers: options.headers});
+    if (url === 'https://api.resend.com/emails') { mail = JSON.parse(options.body); return Response.json({id:'mail-id'}); }
+    if (url === 'https://sb.test/auth/v1/user') return options.headers.Authorization === 'Bearer good' ? Response.json({id:'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', email:'staff@example.com'}) : new Response('', {status:401});
+    if (url.startsWith('https://sb.test/rest/v1/staff')) return Response.json(staffRows);
+    if (url.startsWith('https://sb.test/rest/v1/quotes?id=eq.') && !options.method) return Response.json(url.includes(quoteId) ? [{id:quoteId, service:'vinyl', customer_name:'Dana Customer', email:'customer@example.com'}] : []);
+    return new Response(null, {status: 201});
+  };
+  globalThis.fetch = fakeSupabase;
+
+  calls = [];
+  const saveForm = new FormData();
+  for (const key of ['Customer Name','Phone #','Vehicle','Vehicle Type','Paint Color','Vehicles Condition']) saveForm.set(key,'test');
+  saveForm.set('Service','Vinyl Wrap'); saveForm.set('Email','customer@example.com'); saveForm.set('Contact Consent','Yes');
+  saveForm.set('attachment', new File(['image bytes'],'my car.jpg',{type:'image/jpeg'}));
+  assert.equal((await worker.fetch(new Request(env.SITE_ORIGIN+'/api/quote',{method:'POST',headers:{Origin:env.SITE_ORIGIN},body:saveForm}),sbEnv)).status,200);
+  const upload = calls.find(c => c.url.includes('/storage/v1/object/quote-files/'));
+  assert(upload && upload.url.endsWith('/1-my_car.jpg') && upload.headers['Content-Type'] === 'image/jpeg');
+  const saved = JSON.parse(calls.find(c => c.url === 'https://sb.test/rest/v1/quotes' && c.method === 'POST').body);
+  assert.equal(saved.service,'vinyl'); assert.equal(saved.email,'customer@example.com'); assert.equal(saved.files[0].name,'my_car.jpg');
+  assert(upload.url.includes(saved.id)); assert(mail.html.includes('staff.html#quote=' + saved.id));
+
+  // A failed save must not fail the customer's submission once the email went out.
+  globalThis.fetch = async (url, options) => url.startsWith('https://sb.test') ? new Response('down', {status:500}) : fakeSupabase(url, options);
+  assert.equal((await worker.fetch(new Request(env.SITE_ORIGIN+'/api/quote',{method:'POST',headers:{Origin:env.SITE_ORIGIN},body:saveForm}),sbEnv)).status,200);
+  globalThis.fetch = fakeSupabase;
+
+  const reply = (token, body) => worker.fetch(new Request(env.SITE_ORIGIN+'/api/staff/reply',{method:'POST',headers:{Origin:env.SITE_ORIGIN,'Content-Type':'application/json',...(token ? {Authorization:'Bearer '+token} : {})},body:JSON.stringify(body)}),sbEnv);
+  calls = []; staffRows = [{user_id:'x'}];
+  assert.equal((await reply(null, {quoteId, message:'hi'})).status,401);
+  assert.equal((await reply('bad', {quoteId, message:'hi'})).status,401);
+  staffRows = [];
+  assert.equal((await reply('good', {quoteId, message:'hi'})).status,401);
+  staffRows = [{user_id:'x'}];
+  assert.equal((await reply('good', {quoteId, message:''})).status,400);
+  assert.equal((await reply('good', {quoteId:'22222222-2222-4333-8444-555555555555', message:'hi'})).status,404);
+  assert.equal((await reply('good', {quoteId:'1 or 1=1', message:'hi'})).status,404);
+  calls = [];
+  assert.equal((await reply('good', {quoteId, message:'Hi <Dana>,\nYour wrap is $1,400.'})).status,200);
+  assert.deepEqual(mail.to,['customer@example.com']); assert.equal(mail.reply_to,`reply+${quoteId}@splashanddash.uluxe.site`);
+  assert.equal(mail.subject,'Your Splash and Dash vinyl wrap quote'); assert(mail.html.includes('Hi &lt;Dana&gt;'));
+  const outbound = JSON.parse(calls.find(c => c.url === 'https://sb.test/rest/v1/quote_messages').body);
+  assert.equal(outbound.direction,'outbound'); assert.equal(outbound.author,'staff@example.com');
+  assert.equal(JSON.parse(calls.find(c => c.method === 'PATCH').body).status,'waiting');
+  assert.equal((await worker.fetch(new Request(env.SITE_ORIGIN+'/api/staff/reply',{method:'POST',headers:{Origin:'https://other.test'}}),sbEnv)).status,403);
+
+  // Quote PDFs from the staff page's templates
+  const pdfContent = Buffer.from('%PDF-1.7 test quote').toString('base64');
+  const quoteDoc = {number:'VW-261103-1111', total:3650, deposit:500, validThrough:'2026-12-03'};
+  calls = [];
+  assert.equal((await reply('good', {quoteId, message:'Your quote is attached.', attachment:{filename:'Vinyl-Wrap-Quote-VW-261103-1111.pdf', content:pdfContent}, document:quoteDoc})).status,200);
+  assert.deepEqual(mail.attachments,[{filename:'Vinyl-Wrap-Quote-VW-261103-1111.pdf', content:pdfContent}]);
+  const pdfUpload = calls.find(c => c.url.includes('/storage/v1/object/quote-files/'+quoteId+'/sent/'));
+  assert(pdfUpload && pdfUpload.headers['Content-Type'] === 'application/pdf');
+  const withPdf = JSON.parse(calls.find(c => c.url === 'https://sb.test/rest/v1/quote_messages').body);
+  assert.equal(withPdf.attachment.name,'Vinyl-Wrap-Quote-VW-261103-1111.pdf'); assert.deepEqual(withPdf.document, quoteDoc);
+  for (const attachment of [{filename:'quote.exe', content:pdfContent}, {filename:'q.pdf', content:Buffer.from('<html>').toString('base64')}, {filename:'q.pdf', content:'%%%not base64'}, {filename:'../q.pdf', content:pdfContent}]) {
+    assert.equal((await reply('good', {quoteId, message:'hi', attachment})).status,400);
+  }
+  // A failed PDF copy still records the sent quote, just without a download link.
+  globalThis.fetch = async (url, options) => url.includes('/storage/') ? new Response('down', {status:500}) : fakeSupabase(url, options);
+  calls = [];
+  assert.equal((await reply('good', {quoteId, message:'Attached.', attachment:{filename:'q.pdf', content:pdfContent}, document:quoteDoc})).status,200);
+  const noCopy = JSON.parse(calls.find(c => c.url === 'https://sb.test/rest/v1/quote_messages').body);
+  assert.equal(noCopy.attachment, undefined); assert.equal(noCopy.document.number,'VW-261103-1111');
+  globalThis.fetch = fakeSupabase;
+
+  const config = await (await worker.fetch(new Request(env.SITE_ORIGIN+'/api/staff/config'),sbEnv)).json();
+  assert.equal(config.supabaseAnonKey,'anon'); assert(!JSON.stringify(config).includes('service'));
+  assert.equal((await worker.fetch(new Request(env.SITE_ORIGIN+'/api/staff/config'),env)).status,503);
+
+  const raw = s => new Response(s).body;
+  const inbound = (to, text) => { const forwarded = []; return {forwarded, message:{to, from:'customer@example.com', raw: raw(`From: customer@example.com\r\nTo: ${to}\r\nSubject: Re: Your quote\r\nContent-Type: text/plain\r\n\r\n${text}`), forward: async address => { forwarded.push(address); }}}; };
+  calls = []; mail = null;
+  const known = inbound(`reply+${quoteId}@splashanddash.uluxe.site`, 'Sounds great, Tuesday works.\r\n\r\nOn Mon, Nov 2, 2026 at 9:00 AM Splash and Dash <quotes@example.com> wrote:\r\n> Hi Dana');
+  await worker.email(known.message, sbEnv);
+  const saved_in = JSON.parse(calls.find(c => c.url === 'https://sb.test/rest/v1/quote_messages').body);
+  assert.equal(saved_in.direction,'inbound'); assert.equal(saved_in.body,'Sounds great, Tuesday works.');
+  assert.equal(JSON.parse(calls.find(c => c.method === 'PATCH').body).status,'open');
+  assert.deepEqual(mail.to,['owner@example.com']); assert(mail.subject.includes('Dana Customer')); assert(mail.text.includes('staff.html#quote='+quoteId));
+  assert.equal(known.forwarded.length,0);
+  for (const to of ['hello@splashanddash.uluxe.site', 'reply+22222222-2222-4333-8444-555555555555@splashanddash.uluxe.site']) {
+    const other = inbound(to, 'hello'); await worker.email(other.message, sbEnv); assert.deepEqual(other.forwarded,['owner@example.com']);
+  }
+  globalThis.fetch = async () => new Response('down', {status:500});
+  const failing = inbound(`reply+${quoteId}@splashanddash.uluxe.site`, 'hello'); await worker.email(failing.message, sbEnv);
+  assert.deepEqual(failing.forwarded,['owner@example.com']);
+  console.log('Passed: quote saving with photos, save failures, staff reply auth and sending, config, inbound replies, forwarding.');
 } finally {globalThis.fetch=realFetch}

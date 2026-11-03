@@ -7,7 +7,12 @@
   "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
   "vars": {
     "QUOTE_TO": "angelkhatib4@gmail.com",
-    "SITE_ORIGIN": "https://splashanddash.uluxe.site"
+    "SITE_ORIGIN": "https://splashanddash.uluxe.site",
+    // Staff page (see DEPLOYMENT.md). Empty values leave the site working exactly as before.
+    "SUPABASE_URL": "https://hammpnhozlcqdmrwqhtw.supabase.co",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhhbW1wbmhvemxjcWRtcndxaHR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM3Mjc4NDksImV4cCI6MjEwOTMwMzg0OX0.yo7EmO80jI2w8BTSvFf54PmQpbs2jQa0REl-AXageu4",
+    // Set to "splashanddash.uluxe.site" once Email Routing sends that domain's mail to this Worker.
+    "REPLY_DOMAIN": "splashanddash.uluxe.site"
   },
   "ratelimits": [{ "name": "QUOTE_LIMITER", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } }]
 }
