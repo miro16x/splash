@@ -10,6 +10,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&amp;family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap">
+  <script>
+    (function(){
+      try {
+        var savedTheme = localStorage.getItem('splash-theme');
+        document.documentElement.dataset.theme = savedTheme === 'light' || savedTheme === 'dark'
+          ? savedTheme
+          : (window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+      } catch (e) {}
+    })();
+  </script>
   <style>
     :root{--ocean:#0a3b73;--aqua:#1fbfd1;--ink:#0b2036;--soft:#3e5972;--foam:#f5fafb;--white:#fff;--border:#d4e2e7}
     *{box-sizing:border-box}body{margin:0;background:var(--foam);color:var(--ink);font:16px/1.75 'Plus Jakarta Sans',sans-serif}a{color:var(--ocean)}
@@ -23,6 +33,11 @@
       .nav{padding-inline:1rem;}.nav img{width:110px;height:auto;}.back{font-size:.88rem;}
       main{padding-inline:1rem;}.policy,.faq-card{padding:1.25rem;}
     }
+    /* dark theme, matching the palette in assets/site.css */
+    :root[data-theme=dark]{--mid:#5aa9e6;--aqua:#3fd8e8;--ink:#eaf4f7;--soft:#9fc0d2;--foam:#071a2c;--white:#0d2a44;--border:rgba(255,255,255,.14);color-scheme:dark}
+    :root[data-theme=dark] main a:not(.hover-btn){color:#7cc4f0}
+    :root[data-theme=dark] .policy,:root[data-theme=dark] .faq-card{box-shadow:0 20px 45px -18px rgba(0,0,0,.6)}
+    :root[data-theme=dark] .notice,:root[data-theme=dark] .cta{background:rgba(63,216,232,.08)}
   </style>
 <link rel="stylesheet" href="assets/navigation.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lobster&amp;display=swap"></head>
 <body>

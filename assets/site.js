@@ -207,6 +207,10 @@
   var formConfirm = document.getElementById('quote-confirmation');
   var quoteFormError = document.getElementById('quoteFormError');
   var quoteSubmitButton = quoteForm.querySelector('button[type="submit"]');
+  // the hover button shows its label twice (resting + reveal), so update both copies
+  function setQuoteSubmitLabel(text){
+    quoteSubmitButton.querySelectorAll('[data-submit-label]').forEach(function(label){ label.textContent = text; });
+  }
   var qPhotos = document.getElementById('qPhotos');
   var qInspDate = document.getElementById('qInspDate');
   var qPhotoPreview = document.getElementById('qPhotoPreview');
@@ -334,7 +338,7 @@
       return;
     }
     quoteSubmitButton.disabled = true;
-    quoteSubmitButton.textContent = 'Sending quote request…';
+    setQuoteSubmitLabel('Sending quote request…');
     quoteForm.setAttribute('aria-busy', 'true');
     var controller = new AbortController();
     var timeout = window.setTimeout(function(){ controller.abort(); }, 60000);
@@ -359,7 +363,7 @@
     } finally {
       window.clearTimeout(timeout);
       quoteSubmitButton.disabled = false;
-      quoteSubmitButton.textContent = formConfirm.classList.contains('is-visible') ? 'Send Another Quote' : 'Submit Quote Request';
+      setQuoteSubmitLabel(formConfirm.classList.contains('is-visible') ? 'Send Another Quote' : 'Submit Quote Request');
       quoteForm.removeAttribute('aria-busy');
     }
   });
@@ -720,7 +724,7 @@
     window.setTimeout(function(){ ripple.remove(); }, 650);
   }
 
-  document.querySelectorAll('button, a.btn').forEach(function(control){
+  document.querySelectorAll('button:not(.hover-btn), a.btn').forEach(function(control){
     control.classList.add('material-ripple-control');
     control.addEventListener('pointerdown', function(event){
       if (event.isPrimary) addMaterialRipple(control, event.clientX, event.clientY);

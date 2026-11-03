@@ -1010,7 +1010,7 @@ function estimate() {
   }
   if (sel.chrome && !(sel.coverage === 'partial' && matchPackage()?.chrome)) extras.push(`chrome delete ${CHROME_DELETE_PRICE}`);
   if (finish.upcharge) extras.push(`${finish.label.toLowerCase()} film ${finish.upcharge}`);
-  text = price === null ? '' : `From ${money(price)}` + (extras.length ? ' + ' + extras.join(' + ') : '');
+  text = price === null ? '' : money(price) + (extras.length ? ' + ' + extras.join(' + ') : '');
   return { label, price, extras, text };
 }
 
@@ -1043,7 +1043,7 @@ function updateUI() {
 
   const est = estimate();
   document.getElementById('estimateLabel').textContent = est.label;
-  document.getElementById('estimatePrice').textContent = est.price === null ? '' : `From ${money(est.price)}`;
+  document.getElementById('estimatePrice').textContent = est.price === null ? '' : money(est.price);
   document.getElementById('estimateExtras').textContent =
     (est.extras.length ? '+ ' + est.extras.join(' · ') + '. ' : '') + 'Final price after inspection.';
 
