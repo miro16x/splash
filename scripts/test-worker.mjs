@@ -43,12 +43,15 @@ try {
   // ---------- Supabase: saving quotes, staff replies, inbound email ----------
   const sbEnv = {...env, SUPABASE_URL:'https://sb.test', SUPABASE_ANON_KEY:'anon', SUPABASE_SERVICE_ROLE_KEY:'service', REPLY_DOMAIN:'splashanddash.uluxe.site'};
   const quoteId = '11111111-2222-4333-8444-555555555555';
-  let calls, staffRows;
+  const customerId = '33333333-2222-4333-8444-555555555555', noEmailId = '44444444-2222-4333-8444-555555555555';
+  let calls, staffRows, mails = [], alertRows = [];
   const fakeSupabase = async (url, options = {}) => {
     calls.push({url, method: options.method || 'GET', body: options.body, headers: options.headers});
-    if (url === 'https://api.resend.com/emails') { mail = JSON.parse(options.body); return Response.json({id:'mail-id'}); }
+    if (url === 'https://api.resend.com/emails') { mail = JSON.parse(options.body); mails.push(mail); return Response.json({id:'mail-id'}); }
+    if (url === 'https://sb.test/rest/v1/rpc/staff_alert_emails') return Response.json(alertRows);
     if (url === 'https://sb.test/auth/v1/user') return options.headers.Authorization === 'Bearer good' ? Response.json({id:'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', email:'staff@example.com'}) : new Response('', {status:401});
     if (url.startsWith('https://sb.test/rest/v1/staff')) return Response.json(staffRows);
+    if (url.startsWith('https://sb.test/rest/v1/customers?id=eq.') && !options.method) return Response.json(url.includes(customerId) ? [{id:customerId, name:'Marcus Hill', email:'marcus@example.com', phone:'(340) 555-0199'}] : url.includes(noEmailId) ? [{id:noEmailId, name:'Walk In', email:null, phone:'555'}] : []);
     if (url.startsWith('https://sb.test/rest/v1/quotes?id=eq.') && !options.method) return Response.json(url.includes(quoteId) ? [{id:quoteId, service:'vinyl', customer_name:'Dana Customer', email:'customer@example.com'}] : []);
     return new Response(null, {status: 201});
   };
@@ -65,6 +68,28 @@ try {
   const saved = JSON.parse(calls.find(c => c.url === 'https://sb.test/rest/v1/quotes' && c.method === 'POST').body);
   assert.equal(saved.service,'vinyl'); assert.equal(saved.email,'customer@example.com'); assert.equal(saved.files[0].name,'my_car.jpg');
   assert(upload.url.includes(saved.id)); assert(mail.html.includes('staff.html#quote=' + saved.id));
+  const customer = calls.find(c => c.url === 'https://sb.test/rest/v1/customers?on_conflict=email');
+  assert(customer && customer.headers.Prefer.includes('ignore-duplicates'));
+  assert.deepEqual(JSON.parse(customer.body), {name:'test', email:'customer@example.com', phone:'test', source:'quote'});
+
+  // No one opted in: only the shop inbox email goes out.
+  assert.equal(mails.length, 1);
+
+  // New-quote alerts go to opted-in staff (not the shop inbox again), after the quote is saved.
+  calls = []; mails = []; alertRows = ['ana@example.com', 'owner@example.com', 'ana@example.com', 'not-an-email'];
+  assert.equal((await worker.fetch(new Request(env.SITE_ORIGIN+'/api/quote',{method:'POST',headers:{Origin:env.SITE_ORIGIN},body:saveForm}),sbEnv)).status,200);
+  assert.equal(mails.length, 2);
+  assert.deepEqual(mails[0].to, ['owner@example.com']);
+  const alert = mails[1], alertedId = JSON.parse(calls.find(c => c.url === 'https://sb.test/rest/v1/quotes' && c.method === 'POST').body).id;
+  assert.deepEqual(alert.to, ['ana@example.com']); assert.equal(alert.subject, 'New quote request from test (Vinyl Wrap)');
+  assert(alert.html.includes('staff.html#quote=' + alertedId) && alert.text.includes('staff.html#quote=' + alertedId));
+  assert(calls.findIndex(c => c.url.endsWith('/rpc/staff_alert_emails')) > calls.findIndex(c => c.url === 'https://sb.test/rest/v1/quotes'));
+  // A broken alert lookup (e.g. the schema section not run yet) doesn't affect the submission or the saved customer.
+  globalThis.fetch = async (url, options) => url.endsWith('/rpc/staff_alert_emails') ? new Response('missing', {status:404}) : fakeSupabase(url, options);
+  calls = []; mails = [];
+  assert.equal((await worker.fetch(new Request(env.SITE_ORIGIN+'/api/quote',{method:'POST',headers:{Origin:env.SITE_ORIGIN},body:saveForm}),sbEnv)).status,200);
+  assert.equal(mails.length, 1); assert(calls.some(c => c.url === 'https://sb.test/rest/v1/customers?on_conflict=email'));
+  globalThis.fetch = fakeSupabase; alertRows = [];
 
   // A failed save must not fail the customer's submission once the email went out.
   globalThis.fetch = async (url, options) => url.startsWith('https://sb.test') ? new Response('down', {status:500}) : fakeSupabase(url, options);
@@ -111,6 +136,34 @@ try {
   assert.equal(noCopy.attachment, undefined); assert.equal(noCopy.document.number,'VW-261103-1111');
   globalThis.fetch = fakeSupabase;
 
+  // Quotes started from the customer list
+  const staffQuote = (token, body) => worker.fetch(new Request(env.SITE_ORIGIN+'/api/staff/quote',{method:'POST',headers:{Origin:env.SITE_ORIGIN,'Content-Type':'application/json',...(token ? {Authorization:'Bearer '+token} : {})},body:JSON.stringify(body)}),sbEnv);
+  const quoteBody = {customerId, service:'other', message:'Your quote is attached.', attachment:{filename:'Service-Quote-SQ-261105-3333.pdf', content:pdfContent}, document:{number:'SQ-261105-3333', total:900, deposit:0, validThrough:'2026-12-05'}};
+  staffRows = [{user_id:'x'}];
+  assert.equal((await staffQuote(null, quoteBody)).status,401);
+  assert.equal((await staffQuote('good', {...quoteBody, service:'wash'})).status,400);
+  assert.equal((await staffQuote('good', {...quoteBody, attachment:undefined})).status,400);
+  assert.equal((await staffQuote('good', {...quoteBody, customerId:'55555555-2222-4333-8444-555555555555'})).status,404);
+  assert.equal((await staffQuote('good', {...quoteBody, customerId:noEmailId})).status,400);
+  calls = []; mail = null;
+  const created = await staffQuote('good', quoteBody);
+  assert.equal(created.status,200);
+  const newQuoteId = (await created.json()).quoteId;
+  assert.deepEqual(mail.to,['marcus@example.com']); assert.equal(mail.reply_to,`reply+${newQuoteId}@splashanddash.uluxe.site`);
+  assert.equal(mail.subject,'Your Splash and Dash quote'); assert.equal(mail.attachments[0].filename,'Service-Quote-SQ-261105-3333.pdf');
+  const newQuote = JSON.parse(calls.find(c => c.url === 'https://sb.test/rest/v1/quotes' && c.method === 'POST').body);
+  assert.equal(newQuote.id,newQuoteId); assert.equal(newQuote.service,'other'); assert.equal(newQuote.status,'waiting'); assert.equal(newQuote.email,'marcus@example.com');
+  const newMessage = JSON.parse(calls.find(c => c.url === 'https://sb.test/rest/v1/quote_messages').body);
+  assert.equal(newMessage.quote_id,newQuoteId); assert.equal(newMessage.document.number,'SQ-261105-3333');
+  const logged = JSON.parse(calls.find(c => c.url === 'https://sb.test/rest/v1/customer_contacts').body);
+  assert.equal(logged.customer_id,customerId); assert.equal(logged.method,'email'); assert.equal(logged.author,'staff@example.com');
+  // Nothing is saved when the email can't be sent.
+  globalThis.fetch = async (url, options) => url === 'https://api.resend.com/emails' ? Response.json({error:'fail'},{status:500}) : fakeSupabase(url, options);
+  calls = [];
+  assert.equal((await staffQuote('good', quoteBody)).status,502);
+  assert(!calls.some(c => c.method === 'POST' && c.url.startsWith('https://sb.test/rest/v1/')));
+  globalThis.fetch = fakeSupabase;
+
   const config = await (await worker.fetch(new Request(env.SITE_ORIGIN+'/api/staff/config'),sbEnv)).json();
   assert.equal(config.supabaseAnonKey,'anon'); assert(!JSON.stringify(config).includes('service'));
   assert.equal((await worker.fetch(new Request(env.SITE_ORIGIN+'/api/staff/config'),env)).status,503);
@@ -131,5 +184,5 @@ try {
   globalThis.fetch = async () => new Response('down', {status:500});
   const failing = inbound(`reply+${quoteId}@splashanddash.uluxe.site`, 'hello'); await worker.email(failing.message, sbEnv);
   assert.deepEqual(failing.forwarded,['owner@example.com']);
-  console.log('Passed: quote saving with photos, save failures, staff reply auth and sending, config, inbound replies, forwarding.');
+  console.log('Passed: quote saving with photos, new-quote staff alerts, save failures, staff reply auth and sending, customer-list quotes, config, inbound replies, forwarding.');
 } finally {globalThis.fetch=realFetch}

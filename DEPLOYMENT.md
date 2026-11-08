@@ -76,3 +76,26 @@ alter table public.quote_messages add column if not exists document jsonb;
 ```
 
 Prices for the templates live in `assets/staff-quote.js`. They mirror the tables in `assets/site.js`, so when a price changes, update both.
+
+### Customer list (Customers)
+
+The **Customers** button on the staff page opens a list of everyone who sent a quote request (added automatically, one entry per email) plus anyone staff add with **+ Add person**. Each person has a **stage** (Potential client, Contacted, Booked, Client) and an **interest** (Interested, Not interested, Not sure yet), with filters for both and a search box. Staff call, text or email from the person's page, then **Log contact** with how it went. Logging the first contact moves a potential client to Contacted automatically. The history shows who reached out and when.
+
+To turn it on, run the "Customer list" section at the end of `supabase/schema.sql` once in the SQL Editor, in a new, empty tab. It creates the tables and access rules and adds everyone who has already sent a quote. It's safe to run again.
+
+### Staff dashboard
+
+Staff land on **Dashboard** after signing in. The sidebar (a bottom tab bar on phones) switches between Dashboard, Quotes and Customers. The dashboard shows tiles for quotes that need a reply, quotes waiting on the customer, new requests this week, and interested customers, plus lists of quotes to reply to, people to follow up with, quotes by service, the customer pipeline, and recent activity. Every tile and row opens the matching filtered list. It reads the same Supabase data as the rest of the staff page, so it needs no extra setup (`assets/staff-dashboard.js`).
+
+### Won/lost, revenue, calendar and new-quote alerts
+
+To turn these on, run the "Won/lost, revenue, jobs calendar and new-quote alerts" section at the end of `supabase/schema.sql` once in the SQL Editor, in a new, empty tab. It's safe to run again. Until it's run, the staff page keeps working as before: the Won/Lost buttons, revenue and calendar say they aren't set up yet.
+
+- **Won / Lost.** On a quote, **Won** asks for the agreed price, pre-filled from the last quote PDF sent. **Lost** asks why: price, timing, went with someone else, stopped replying, not a real lead, or other. Saving closes the quote and records who decided and when. Winning moves the person to Booked on the customer list. **Change result** edits it, and **Reopen** clears it. Quotes has **Won** and **Lost** filters. A customer replying to a won quote moves it back to Needs reply but keeps it won.
+- **Revenue.** The dashboard's **Revenue from won quotes** shows money won this month and over the last 6 months, the close rate over 90 days (spam and duplicates are left out), why quotes were lost, and **Quotes out**: the total of sent quotes still waiting on a yes or no. Below that is a month-by-month chart, with a table view split by service. Revenue is the agreed price entered when a quote is marked won.
+- **Calendar.** **Calendar** shows the week's jobs, filtered by who's doing them. Add a job with **+ New job** or a day's **+**, or with **Schedule the job** on a won quote, which fills in the customer, vehicle, service and price. The end time is suggested from the service (wash 2 h, correction 8 h, ceramic 1 day, wrap 2 days), and jobs can span several days. Staff get a warning before double-booking someone. Booking a job for someone on the customer list moves them to Booked, and marking it Done makes them a Client. The dashboard shows **Today's jobs**, with Start/Done buttons, and quotes won in the last 60 days that have no job yet. Times are shown in each staff member's device time zone.
+- **New-quote alerts.** Each staff member gets an email for every new quote request, in addition to the full request that still goes to QUOTE_TO. They can turn it off with **Email me new quotes** in the account menu. While the staff page is open, new requests also show a pop-up with an Open button, add a count to the tab title when the tab is in the background, and, after **Desktop alerts** is turned on in that browser, show a system notification. The page checks for new quotes every minute.
+
+### Quotes from the customer list
+
+On a person's page under **Customers**, **Create a quote** lets staff pick Vinyl wrap, Ceramic coating, Paint correction (the same templates as quote replies) or **Custom**, where they list any work as line items with prices. **Send quote** emails the PDF (`/api/staff/quote`), creates a matching quote under **Quotes** (Custom quotes appear under "Other") so the customer's reply has a conversation to land in, and logs the email on the person's contact history, which moves a potential client to Contacted. People without an email address can still preview and print the PDF; sending needs an email. No extra database setup is needed.

@@ -111,10 +111,35 @@ async function handleQuote(request, env) {
           id, service: services[get('Service')] || 'other', customer_name: get('Customer Name'), email: get('Email'),
           phone: get('Phone #'), vehicle: get('Vehicle'), fields: rows, files
         });
+        try { await alertStaff(env, id, get); } catch (error) { console.error('Staff alert failed', id, error); }
       } catch (error) { console.error('Quote save failed', id, error); }
+      // Add the sender to the staff customer list; someone already on it keeps their stage and notes.
+      try {
+        await sb(env, '/rest/v1/customers?on_conflict=email', {
+          method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' },
+          body: JSON.stringify({ name: get('Customer Name'), email: get('Email').toLowerCase(), phone: get('Phone #'), source: 'quote' })
+        });
+      } catch (error) { console.error('Customer save failed', id, error); }
     }
     return json(200, 'Quote accepted');
   } catch { return json(502, 'Could not confirm your submission'); }
+}
+
+// Emails staff who turned on new-quote alerts (staff page → account menu). The shop inbox (QUOTE_TO)
+// already got the full request above, so it's skipped here. Only sent once the quote is saved, so the link works.
+async function alertStaff(env, id, get) {
+  const shop = String(env.QUOTE_TO || '').toLowerCase();
+  const found = await (await sb(env, '/rest/v1/rpc/staff_alert_emails', { method: 'POST', body: '{}' })).json();
+  const to = [...new Set((Array.isArray(found) ? found : []).filter(e => typeof e === 'string' && e.includes('@') && e !== shop))].slice(0, 50);
+  if (!to.length) return;
+  const name = get('Customer Name'), service = get('Service'), vehicle = get('Vehicle'), link = staffLink(env, id);
+  const details = [['Service', service], ['Vehicle', vehicle], ['Phone', get('Phone #')], ['Email', get('Email')]].filter(([, v]) => v);
+  const result = await sendEmail(env, {
+    to, subject: `New quote request from ${name}${service ? ` (${service})` : ''}`,
+    text: `${name} asked for a quote.\n\n${details.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\nOpen it on the staff page: ${link}\n\nTo stop these emails, turn off "Email me new quotes" in the staff page account menu.`,
+    html: `<div style="font-family:Arial,sans-serif;color:#0b2036;max-width:640px;margin:auto;font-size:15px;line-height:1.6"><p><strong>${escape(name)}</strong> asked for a quote.</p><table cellpadding="6" style="border-collapse:collapse">${details.map(([k, v]) => `<tr><th align="left" style="color:#5b6b7a;padding-right:16px">${escape(k)}</th><td>${escape(v)}</td></tr>`).join('')}</table><p><a href="${escape(link)}">Open it on the staff page</a></p><p style="font-size:12px;color:#5b6b7a">To stop these emails, turn off "Email me new quotes" in the staff page account menu.</p></div>`
+  });
+  if (!result.ok) console.error('Staff alert email was not accepted', id, result.status);
 }
 
 // Confirms the bearer token belongs to a Supabase user who is listed in public.staff.
@@ -129,54 +154,103 @@ async function staffUser(request, env) {
   return staff.length ? user : null;
 }
 
+// Checks the staff request and reads the outgoing email (and optional quote PDF) from its JSON body.
+async function staffOutgoing(request, env) {
+  if (request.method !== 'POST') return { error: json(405, 'Use POST') };
+  if (request.headers.get('Origin') !== env.SITE_ORIGIN) return { error: json(403, 'Invalid origin') };
+  if (!supabaseReady(env) || !env.SUPABASE_ANON_KEY || !env.RESEND_API_KEY || !env.QUOTE_FROM) return { error: json(503, 'Staff messaging is not configured yet') };
+  const user = await staffUser(request, env);
+  if (!user) return { error: json(401, 'Please sign in with a staff account') };
+  if (Number(request.headers.get('Content-Length') || 0) > 8 * 1024 * 1024) return { error: json(413, 'The quote PDF is too large') };
+  const body = await request.json().catch(() => ({}));
+  const message = typeof body.message === 'string' ? body.message.trim() : '';
+  const subject = (typeof body.subject === 'string' ? body.subject.trim() : '').slice(0, 200);
+  if (!message || message.length > 10000) return { error: json(400, 'Write a message of up to 10,000 characters') };
+  // Optional quote PDF built on the staff page from a quote template.
+  let pdf = null;
+  if (body.attachment) {
+    const filename = String(body.attachment.filename || '');
+    const content = String(body.attachment.content || '');
+    if (!/^[A-Za-z0-9._-]{1,80}\.pdf$/.test(filename) || content.length > 6 * 1024 * 1024) return { error: json(400, 'Invalid quote PDF') };
+    let bytes;
+    try { bytes = Uint8Array.from(atob(content), c => c.charCodeAt(0)); } catch { return { error: json(400, 'Invalid quote PDF') }; }
+    if (String.fromCharCode(...bytes.subarray(0, 5)) !== '%PDF-') return { error: json(400, 'Invalid quote PDF') };
+    pdf = { filename, content, bytes };
+  }
+  const doc = body.document && typeof body.document === 'object' ? body.document : {};
+  return { user, body, out: { message, subject, pdf, doc } };
+}
+
+// Emails the customer about a quote; replies come back to that quote's own reply address.
+async function emailCustomer(env, quote, out) {
+  out.finalSubject = out.subject || `Your Splash and Dash ${serviceNames[quote.service]} quote`.replace('  ', ' ');
+  const result = await sendEmail(env, {
+    to: [quote.email], reply_to: replyAddress(env, quote.id), subject: out.finalSubject, text: out.message,
+    html: `<div style="font-family:Arial,sans-serif;color:#0b2036;max-width:640px;margin:auto;font-size:15px;line-height:1.6"><div style="white-space:pre-wrap">${escape(out.message)}</div>${logo}</div>`,
+    ...(out.pdf ? { attachments: [{ filename: out.pdf.filename, content: out.pdf.content }] } : {})
+  });
+  return result.ok && !!(await result.json()).id;
+}
+
+// Records a sent email in the quote's conversation, keeping a copy of any quote PDF.
+async function saveOutbound(env, user, quote, out, now) {
+  const row = { quote_id: quote.id, direction: 'outbound', author: user.email, subject: out.finalSubject, body: out.message, created_at: now };
+  if (out.pdf) {
+    // The email already went out, so a failed copy only loses the staff-page download, not the quote.
+    const path = `${quote.id}/sent/${Date.now()}-${out.pdf.filename}`;
+    try {
+      await sb(env, `/storage/v1/object/quote-files/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/pdf' }, body: out.pdf.bytes });
+      row.attachment = { path, name: out.pdf.filename, type: 'application/pdf' };
+    } catch (error) { console.error('Quote PDF save failed', quote.id, error); }
+    row.document = { number: String(out.doc.number || '').slice(0, 40), total: Number(out.doc.total) || 0, deposit: Number(out.doc.deposit) || 0, validThrough: String(out.doc.validThrough || '').slice(0, 20) };
+  }
+  await sbInsert(env, 'quote_messages', row);
+}
+
 async function handleStaffReply(request, env) {
-  if (request.method !== 'POST') return json(405, 'Use POST');
-  if (request.headers.get('Origin') !== env.SITE_ORIGIN) return json(403, 'Invalid origin');
-  if (!supabaseReady(env) || !env.SUPABASE_ANON_KEY || !env.RESEND_API_KEY || !env.QUOTE_FROM) return json(503, 'Staff messaging is not configured yet');
   try {
-    const user = await staffUser(request, env);
-    if (!user) return json(401, 'Please sign in with a staff account');
-    if (Number(request.headers.get('Content-Length') || 0) > 8 * 1024 * 1024) return json(413, 'The quote PDF is too large');
-    const body = await request.json().catch(() => ({}));
-    const message = typeof body.message === 'string' ? body.message.trim() : '';
-    const subject = (typeof body.subject === 'string' ? body.subject.trim() : '').slice(0, 200);
-    if (!message || message.length > 10000) return json(400, 'Write a message of up to 10,000 characters');
-    // Optional quote PDF built on the staff page from the service's quote template.
-    let pdf = null;
-    if (body.attachment) {
-      const filename = String(body.attachment.filename || '');
-      const content = String(body.attachment.content || '');
-      if (!/^[A-Za-z0-9._-]{1,80}\.pdf$/.test(filename) || content.length > 6 * 1024 * 1024) return json(400, 'Invalid quote PDF');
-      let bytes;
-      try { bytes = Uint8Array.from(atob(content), c => c.charCodeAt(0)); } catch { return json(400, 'Invalid quote PDF'); }
-      if (String.fromCharCode(...bytes.subarray(0, 5)) !== '%PDF-') return json(400, 'Invalid quote PDF');
-      pdf = { filename, content, bytes };
-    }
+    const { error, user, body, out } = await staffOutgoing(request, env);
+    if (error) return error;
     const quote = await sbQuote(env, String(body.quoteId || ''));
     if (!quote) return json(404, 'Quote not found');
-    const finalSubject = subject || `Your Splash and Dash ${serviceNames[quote.service]} quote`.replace('  ', ' ');
-    const result = await sendEmail(env, {
-      to: [quote.email], reply_to: replyAddress(env, quote.id), subject: finalSubject, text: message,
-      html: `<div style="font-family:Arial,sans-serif;color:#0b2036;max-width:640px;margin:auto;font-size:15px;line-height:1.6"><div style="white-space:pre-wrap">${escape(message)}</div>${logo}</div>`,
-      ...(pdf ? { attachments: [{ filename: pdf.filename, content: pdf.content }] } : {})
-    });
-    if (!result.ok || !(await result.json()).id) return json(502, 'The email could not be sent');
+    if (!(await emailCustomer(env, quote, out))) return json(502, 'The email could not be sent');
     const now = new Date().toISOString();
-    const row = { quote_id: quote.id, direction: 'outbound', author: user.email, subject: finalSubject, body: message, created_at: now };
-    if (pdf) {
-      // The email already went out, so a failed copy only loses the staff-page download, not the quote.
-      const path = `${quote.id}/sent/${Date.now()}-${pdf.filename}`;
-      try {
-        await sb(env, `/storage/v1/object/quote-files/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/pdf' }, body: pdf.bytes });
-        row.attachment = { path, name: pdf.filename, type: 'application/pdf' };
-      } catch (error) { console.error('Quote PDF save failed', quote.id, error); }
-      const doc = body.document && typeof body.document === 'object' ? body.document : {};
-      row.document = { number: String(doc.number || '').slice(0, 40), total: Number(doc.total) || 0, deposit: Number(doc.deposit) || 0, validThrough: String(doc.validThrough || '').slice(0, 20) };
-    }
-    await sbInsert(env, 'quote_messages', row);
+    await saveOutbound(env, user, quote, out, now);
     await sbPatchQuote(env, quote.id, { status: 'waiting', last_message_at: now });
     return json(200, 'Message sent');
   } catch { return json(502, 'The message could not be sent'); }
+}
+
+// A quote staff start from the customer list: creates the quote (so replies have a conversation to land in),
+// sends it, and logs the email on the customer.
+const staffQuoteServices = { vinyl: 'Vinyl Wrap', ceramic: 'Ceramic Coating', correction: 'Paint Correction', other: 'Custom quote' };
+async function handleStaffQuote(request, env) {
+  try {
+    const { error, user, body, out } = await staffOutgoing(request, env);
+    if (error) return error;
+    const service = String(body.service || '');
+    if (!staffQuoteServices[service]) return json(400, 'Pick a service for the quote');
+    if (!out.pdf) return json(400, 'Attach the quote PDF');
+    const customerId = String(body.customerId || '');
+    if (!uuid.test(customerId)) return json(404, 'Customer not found');
+    const customer = (await (await sb(env, `/rest/v1/customers?id=eq.${customerId}&select=id,name,email,phone`)).json())[0];
+    if (!customer) return json(404, 'Customer not found');
+    if (!customer.email) return json(400, 'Add an email address for this person before sending a quote');
+    const quote = { id: crypto.randomUUID(), service, customer_name: customer.name, email: customer.email };
+    if (!(await emailCustomer(env, quote, out))) return json(502, 'The email could not be sent');
+    const now = new Date().toISOString();
+    await sbInsert(env, 'quotes', {
+      id: quote.id, service, status: 'waiting', customer_name: customer.name, email: customer.email, phone: customer.phone || null,
+      fields: [['Service', staffQuoteServices[service]], ['Customer Name', customer.name], ['Phone #', customer.phone || ''], ['Email', customer.email], ['Started by', user.email + ' from the customer list']]
+        .filter(([, value]) => value),
+      created_at: now, last_message_at: now
+    });
+    await saveOutbound(env, user, quote, out, now);
+    try {
+      await sbInsert(env, 'customer_contacts', { customer_id: customer.id, method: 'email', outcome: 'reached', author: user.email, note: `Sent quote ${String(out.doc.number || '').slice(0, 40)}`.trim(), created_at: now });
+    } catch (e) { console.error('Contact log failed', customer.id, e); }
+    return json(200, 'Quote sent', { quoteId: quote.id });
+  } catch { return json(502, 'The quote could not be sent'); }
 }
 
 // Keeps only the new part of an email reply: drops the quoted thread that mail apps append.
@@ -211,6 +285,7 @@ export default {
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     if (url.pathname === '/api/quote') return handleQuote(request, env);
     if (url.pathname === '/api/staff/reply') return handleStaffReply(request, env);
+    if (url.pathname === '/api/staff/quote') return handleStaffQuote(request, env);
     if (url.pathname === '/api/staff/config') {
       // Public values only: the anon key is safe in the browser because RLS limits it to staff.
       if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return json(503, 'The staff page is not configured yet');

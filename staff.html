@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Staff Quotes | Splash &amp; Dash</title>
+<title>Staff Dashboard | Splash &amp; Dash</title>
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" type="image/png" href="images/favicon-64.png" sizes="64x43">
@@ -43,12 +43,39 @@
   .user-who span:empty{display:none;}
   .user-item{display:block;width:100%;text-align:left;background:none;border:0;border-radius:9px;padding:.6rem .75rem;color:var(--text);font:600 .9rem var(--font-body);}
   .user-item:hover,.user-item:focus-visible{background:var(--border-soft);outline:none;}
-  .quotes-heading{margin:0;}
-  .quotes-toggle{display:inline-flex;align-items:center;gap:.6rem;background:var(--bg-raised);border:1.5px solid var(--border);border-radius:999px;padding:.5rem 1.1rem .5rem 1.4rem;color:var(--text);font:600 clamp(1.4rem,2.6vw,1.8rem)/1.2 var(--font-display);min-height:48px;}
-  .quotes-toggle:hover,.quotes-toggle[aria-expanded=true]{border-color:var(--accent);}
-  .quotes-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-  .quotes-toggle svg{width:1.05em;height:1.05em;transition:transform .2s ease;}
-  .quotes-toggle[aria-expanded=true] svg{transform:rotate(180deg);}
+
+  /* customer list (assets/staff-customers.js) */
+  .cust-search{font:inherit;color:var(--text);background:var(--bg-raised);border:1.5px solid var(--border);border-radius:999px;padding:.5rem 1rem;min-height:40px;width:min(280px,100%);}
+  .cust-links{display:flex;gap:.4rem;flex-wrap:wrap;}
+  a.ghost{display:inline-flex;align-items:center;text-decoration:none;}
+  .cust-status{display:grid;gap:.8rem;}
+  .cust-status-label{display:block;font-weight:600;font-size:.85rem;margin-bottom:.35rem;}
+  .cust-history{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;}
+  .cust-history li{border:1px solid var(--border);border-radius:12px;padding:.65rem .85rem;background:var(--bg);}
+  .cust-quotes{display:flex;gap:.4rem;flex-wrap:wrap;}
+  .cust-quote{display:grid;gap:.5rem;margin-top:.4rem;}
+  .cust-quote-pick{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+  .cust-flash{margin:0 0 .6rem;padding:.6rem .8rem;border-radius:10px;background:color-mix(in srgb,var(--viz-closed,#1baf7a) 14%,transparent);color:var(--text);}
+  /* custom quotes: one row per piece of work */
+  .qb-items{display:grid;gap:.5rem;}
+  .qb-item{display:grid;grid-template-columns:minmax(0,1fr) 8rem auto;gap:.5rem;align-items:center;}
+  .qb-item input[type=number]{width:100%;font:inherit;color:var(--text);background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:.65rem .8rem;}
+  .qb-item-remove{width:40px;padding:0;}
+  .qb-items > .ghost{justify-self:start;}
+  .text-link.danger{display:inline;margin:0;color:#d33f22;}
+  :root[data-theme=dark] .text-link.danger{color:#ff9b80;}
+  .pill.stage-potential{background:#fff1d6;color:#8a5a00;}
+  .pill.stage-contacted{background:#dceefc;color:#0a4f8a;}
+  .pill.stage-booked{background:#ece3fb;color:#5b2ea6;}
+  .pill.stage-client{background:#d9f5e6;color:#11643a;}
+  .pill.interest-interested{background:#d9f5e6;color:#11643a;}
+  .pill.interest-not_interested{background:#fde2dc;color:#a3301a;}
+  .pill.interest-unknown{background:var(--border-soft);color:var(--text-soft);}
+  :root[data-theme=dark] .pill.stage-potential{background:rgba(255,196,84,.18);color:#ffd58a;}
+  :root[data-theme=dark] .pill.stage-contacted{background:rgba(90,169,230,.2);color:#a9d3f5;}
+  :root[data-theme=dark] .pill.stage-booked{background:rgba(170,130,240,.2);color:#d2bdf7;}
+  :root[data-theme=dark] .pill.stage-client,:root[data-theme=dark] .pill.interest-interested{background:rgba(80,200,140,.18);color:#9de4bd;}
+  :root[data-theme=dark] .pill.interest-not_interested{background:rgba(255,130,100,.2);color:#ffb59f;}
   .ghost{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:999px;padding:.45rem .95rem;font:600 .85rem var(--font-body);min-height:40px;}
   .ghost:hover{border-color:var(--accent);}
   .ghost[aria-pressed=true]{background:var(--accent-strong);border-color:var(--accent-strong);color:#fff;}
@@ -73,13 +100,19 @@
   :root[data-theme=dark] .note.error{color:#ff9b80;}
 
   .staff-app{flex:1;display:flex;flex-direction:column;padding:1.2rem clamp(1rem,3vw,2rem) 2rem;gap:1rem;max-width:1400px;width:100%;margin:0 auto;}
-  .tabs{display:flex;gap:.5rem;flex-wrap:wrap;}
-  .tab{display:flex;align-items:center;gap:.55rem;background:var(--bg-raised);border:1.5px solid var(--border);color:var(--text);border-radius:999px;padding:.6rem 1.15rem;font:700 .95rem var(--font-body);min-height:44px;}
-  .tab[aria-selected=true]{border-color:var(--accent-strong);background:var(--accent-strong);color:#fff;}
   .count{background:var(--aqua);color:#05213f;border-radius:999px;font-size:.75rem;padding:.1rem .5rem;min-width:1.5rem;text-align:center;}
+  /* count badges take their category's colour (same family as the list tags) */
+  .count.stage-potential{background:#f2b544;color:#3d2800;}
+  .count.stage-contacted{background:#5aa9e6;color:#05213f;}
+  .count.stage-booked{background:#a582e8;color:#1f0b45;}
+  .count.stage-client{background:#3cc47c;color:#05301a;}
+  .count.interest-interested{background:#1baf7a;color:#04281b;}
+  .count.interest-not_interested{background:#e34948;color:#fff;}
+  .count.interest-unknown{background:#a3b1bd;color:#1b2733;}
+  .count.status-open{background:#eb6834;color:#fff;}
+  .count.status-waiting{background:#2a78d6;color:#fff;}
+  .count.status-closed{background:#1baf7a;color:#04281b;}
   .count:empty{display:none;}
-  .toolbar{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;}
-  .toolbar .spacer{flex:1;}
 
   .panes{flex:1;display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:1rem;min-height:0;}
   .list{padding:.4rem;overflow:auto;max-height:calc(100vh - 230px);}
@@ -91,11 +124,13 @@
   .item-top{display:flex;justify-content:space-between;gap:.6rem;align-items:baseline;}
   .item-name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .item-date{font-size:.78rem;color:var(--text-soft);white-space:nowrap;}
-  .item-sub{font-size:.85rem;color:var(--text-soft);display:flex;gap:.5rem;align-items:center;margin-top:.2rem;}
+  .item-sub{font-size:.85rem;color:var(--text-soft);display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;margin-top:.2rem;}
+  .item-sub > span{white-space:nowrap;}
   .pill{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:.12rem .5rem;white-space:nowrap;}
   .pill.open{background:#ffe3d9;color:#a3301a;}
   .pill.waiting{background:#dceefc;color:#0a4f8a;}
-  .pill.closed{background:var(--border-soft);color:var(--text-soft);}
+  .pill.closed{background:#d6f3e8;color:#0d6b4a;}
+  :root[data-theme=dark] .pill.closed{background:rgba(27,175,122,.18);color:#8fe0c0;}
   :root[data-theme=dark] .pill.open{background:rgba(255,130,100,.2);color:#ffb59f;}
   :root[data-theme=dark] .pill.waiting{background:rgba(90,169,230,.2);color:#a9d3f5;}
 
@@ -151,6 +186,186 @@
   .reply-actions .note{margin:0;}
   .hover-btn[disabled]{opacity:.6;cursor:progress;}
 
+
+  /* ---------- app shell: side nav (a bottom bar on phones) + the current section ---------- */
+  .staff-shell{flex:1;display:grid;grid-template-columns:216px minmax(0,1fr);min-height:0;}
+  .side-nav{display:flex;flex-direction:column;gap:.3rem;padding:1.2rem .75rem;background:var(--bg-raised);border-right:1px solid var(--border);position:sticky;top:0;align-self:start;height:calc(100vh - 66px);}
+  .nav-item{display:flex;align-items:center;gap:.75rem;width:100%;padding:.7rem .85rem;border:0;border-radius:12px;background:none;color:var(--text-soft);font:600 .95rem var(--font-body);text-align:left;}
+  .nav-item svg{width:20px;height:20px;flex:none;}
+  .nav-item:hover{background:var(--border-soft);color:var(--text);}
+  .nav-item[aria-current=page]{background:color-mix(in srgb,var(--accent-strong) 14%,transparent);color:var(--accent-strong);}
+  :root[data-theme=dark] .nav-item[aria-current=page]{color:#7cc4f0;}
+  .nav-item .count{margin-left:auto;}
+  .view{display:flex;flex-direction:column;gap:1rem;flex:1;min-height:0;}
+  .page-head{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+  .page-head h1{font-size:clamp(1.6rem,2.6vw,2.1rem);}
+  .page-head p{flex-basis:100%;color:var(--text-soft);font-size:.92rem;}
+  .page-head .spacer{flex:1;}
+  .btn-primary{display:inline-flex;align-items:center;gap:.4rem;background:var(--accent-strong);color:#fff;border:0;border-radius:999px;padding:.5rem 1.1rem;font:700 .86rem var(--font-body);min-height:40px;}
+  .btn-primary:hover{filter:brightness(1.08);}
+
+  /* one card holding every filter for the section, one labelled row each */
+  .filter-card{padding:.9rem 1.1rem;display:grid;gap:.7rem;overflow:hidden;}
+  .filter-row{display:flex;align-items:center;gap:.8rem;min-width:0;}
+  .filter-label{flex:none;width:5.2rem;font:700 .7rem var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--text-soft);}
+  .chips{display:flex;gap:.4rem;flex-wrap:wrap;min-width:0;}
+  .chip{display:inline-flex;align-items:center;gap:.45rem;padding:.38rem .85rem;border:1px solid var(--border);border-radius:999px;background:var(--bg);color:var(--text);font:600 .86rem var(--font-body);white-space:nowrap;min-height:36px;}
+  .chip:hover{border-color:var(--accent);}
+  .chip[aria-pressed=true],.chip[aria-selected=true]{background:var(--accent-strong);border-color:var(--accent-strong);color:#fff;}
+  .cust-search{width:min(340px,100%);min-height:38px;}
+
+  /* ---------- dashboard (assets/staff-dashboard.js) ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;}
+  .stat{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:.35rem;padding:1.05rem 1.2rem 1.1rem 1.4rem;text-align:left;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-raised);box-shadow:var(--shadow-sm);color:var(--text);font:inherit;}
+  .stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--tone);}
+  .stat:hover{border-color:var(--tone);}
+  .stat-label{display:flex;align-items:center;gap:.5rem;font-size:.86rem;font-weight:600;color:var(--text-soft);}
+  .stat-label svg{width:18px;height:18px;color:var(--tone);}
+  .stat-value{font:600 2.4rem/1 var(--font-display);}
+  .stat-hint{font-size:.78rem;color:var(--text-soft);}
+  .widgets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;}
+  .widget{padding:1.1rem 1.2rem;display:flex;flex-direction:column;gap:.5rem;min-width:0;}
+  .widget.wide{grid-column:1 / -1;}
+  .widget-head{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;margin-bottom:.2rem;}
+  .widget-head h2{font-size:1.15rem;}
+  .widget-link{background:none;border:0;padding:0;color:var(--accent-strong);font:600 .85rem var(--font-body);white-space:nowrap;}
+  :root[data-theme=dark] .widget-link{color:#7cc4f0;}
+  .widget-empty{color:var(--text-soft);font-size:.9rem;padding:.8rem 0;}
+  .row{display:flex;align-items:center;gap:.7rem;padding:.55rem .5rem;border-radius:10px;}
+  .row + .row{border-top:1px solid var(--border-soft);}
+  .row:hover{background:var(--border-soft);}
+  .row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:.2rem;background:none;border:0;padding:0;text-align:left;color:var(--text);font:inherit;}
+  .row-title{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .row-sub{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;font-size:.82rem;color:var(--text-soft);}
+  .row-meta{font-size:.78rem;color:var(--text-soft);white-space:nowrap;}
+  .row-action{flex:none;}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--tone,var(--accent));}
+  .widget-foot{font-size:.82rem;color:var(--text-soft);margin-top:.2rem;}
+
+  /* ---------- dashboard charts: stacked bars (quotes by service) and stacked columns (customer pipeline) ----------
+     Series colours were checked with the dataviz palette validator against the card surfaces (#fff / #0d2a44). */
+  .viz{position:relative;--lab:8.5rem;--viz-open:#eb6834;--viz-waiting:#2a78d6;--viz-closed:#1baf7a;--viz-interested:#1baf7a;--viz-unsure:#c2c9d0;--viz-not:#e34948;--viz-grid:#e5ebee;--viz-axis:#c3ced6;}
+  @media (prefers-color-scheme:dark){ :root:where(:not([data-theme="light"])) .viz{--viz-open:#d95926;--viz-waiting:#3987e5;--viz-closed:#199e70;--viz-interested:#199e70;--viz-unsure:#4a5a6b;--viz-not:#e66767;--viz-grid:rgba(255,255,255,.07);--viz-axis:rgba(255,255,255,.18);} }
+  :root[data-theme=dark] .viz{--viz-open:#d95926;--viz-waiting:#3987e5;--viz-closed:#199e70;--viz-interested:#199e70;--viz-unsure:#4a5a6b;--viz-not:#e66767;--viz-grid:rgba(255,255,255,.07);--viz-axis:rgba(255,255,255,.18);}
+  .viz-legend{list-style:none;margin:.2rem 0 .7rem;padding:0;display:flex;flex-wrap:wrap;gap:.3rem 1rem;font-size:.8rem;color:var(--text-soft);}
+  .viz-legend li{display:inline-flex;align-items:center;gap:.4rem;}
+  .viz-swatch{width:10px;height:10px;border-radius:2px;flex:none;}
+  .hbar-plot{position:relative;display:flex;flex-direction:column;}
+  .hbar-grid{position:absolute;top:0;bottom:1.5rem;left:var(--lab);right:2.2rem;pointer-events:none;}
+  .hbar-grid span{position:absolute;top:0;bottom:0;width:1px;background:var(--viz-grid);}
+  .hbar-grid span:first-child{background:var(--viz-axis);}
+  .hbar-row{position:relative;display:grid;grid-template-columns:var(--lab) minmax(0,1fr);align-items:center;height:40px;padding:0;border:0;border-radius:8px;background:none;color:var(--text);font:600 .86rem var(--font-body);text-align:left;}
+  .hbar-row:hover,.hbar-row:focus-visible{background:color-mix(in srgb,var(--border-soft) 60%,transparent);outline:none;}
+  .hbar-row:focus-visible{box-shadow:0 0 0 2px var(--accent);}
+  .hbar-label{padding-left:.4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .hbar-track{position:relative;display:flex;align-items:center;height:100%;margin-right:2.2rem;}
+  .hbar-stack{flex:none;display:flex;gap:2px;height:20px;}
+  .hbar-seg{min-width:3px;height:100%;}
+  .hbar-stack > :last-child{border-radius:0 4px 4px 0;}
+  .hbar-value{flex:none;margin-left:.45rem;font-size:.8rem;color:var(--text-soft);font-variant-numeric:tabular-nums;}
+  .hbar-axis{position:relative;height:1.5rem;margin-left:var(--lab);margin-right:2.2rem;font-size:.72rem;color:var(--text-soft);font-variant-numeric:tabular-nums;}
+  .hbar-axis span{position:absolute;top:.35rem;transform:translateX(-50%);}
+  .vcol-plot{display:grid;grid-template-columns:2.6rem minmax(0,1fr);grid-template-rows:180px auto;margin-top:1.3rem;}
+  .vcol-y{position:relative;font-size:.72rem;color:var(--text-soft);font-variant-numeric:tabular-nums;}
+  .vcol-y span{position:absolute;right:.55rem;transform:translateY(50%);}
+  .vcol-area{position:relative;}
+  .vcol-grid{position:absolute;inset:0;pointer-events:none;}
+  .vcol-grid span{position:absolute;left:0;right:0;height:1px;background:var(--viz-grid);}
+  .vcol-grid span:first-child{background:var(--viz-axis);}
+  .vcol-cols{position:absolute;inset:0;display:flex;}
+  .vcol{position:relative;flex:1;display:flex;justify-content:center;align-items:flex-end;padding:0;border:0;border-radius:8px 8px 0 0;background:none;}
+  .vcol:hover,.vcol:focus-visible{background:color-mix(in srgb,var(--border-soft) 60%,transparent);outline:none;}
+  .vcol:focus-visible{box-shadow:0 0 0 2px var(--accent);}
+  .vcol-stack{display:flex;flex-direction:column-reverse;gap:2px;width:24px;}
+  .vcol-seg{min-height:3px;width:100%;}
+  .vcol-stack > :last-child{border-radius:4px 4px 0 0;}
+  .vcol-value{position:absolute;left:0;right:0;text-align:center;font-size:.78rem;color:var(--text-soft);font-variant-numeric:tabular-nums;}
+  .vcol-x{display:flex;padding-top:.45rem;font-size:.78rem;color:var(--text-soft);}
+  .vcol-x span{flex:1;text-align:center;}
+  .viz-tip{position:absolute;z-index:5;pointer-events:none;min-width:160px;padding:.55rem .7rem;border-radius:10px;background:var(--bg-raised);border:1px solid var(--border);box-shadow:var(--shadow);font-size:.8rem;}
+  .viz-tip-title{font-weight:700;margin-bottom:.3rem;}
+  .viz-tip-row{display:flex;align-items:center;gap:.45rem;color:var(--text-soft);}
+  .viz-tip-row strong{min-width:1.1rem;color:var(--text);}
+  .viz-tip-key{width:12px;height:3px;border-radius:2px;flex:none;}
+  .viz-toggle{margin-left:auto;}
+  .widget-head{gap:.9rem;}
+  .viz-table{font-size:.86rem;}
+  .viz-table th,.viz-table td{padding:.45rem .5rem;border-bottom:1px solid var(--border-soft);text-align:right;font-variant-numeric:tabular-nums;}
+  .viz-table th[scope=row],.viz-table thead th:first-child{text-align:left;}
+  .viz-table thead th{font-size:.74rem;font-weight:600;color:var(--text-soft);}
+  @media (max-width:1150px){ .stats{grid-template-columns:repeat(2,minmax(0,1fr));} .widgets{grid-template-columns:1fr;} }
+
+  /* ---------- won / lost ---------- */
+  .pill.won{background:#d6f3e8;color:#0d6b4a;}
+  .pill.lost{background:#ece9e4;color:#5b544a;}
+  :root[data-theme=dark] .pill.won{background:rgba(27,175,122,.18);color:#8fe0c0;}
+  :root[data-theme=dark] .pill.lost{background:rgba(255,255,255,.1);color:#cfc8bd;}
+  .count.status-won{background:#1baf7a;color:#04281b;}
+  .count.status-lost{background:#a3b1bd;color:#1b2733;}
+  .outcome-form{padding:1rem 1.1rem;margin:-.2rem 0 1.2rem;background:var(--bg);}
+  .outcome-form .qb{margin-top:.6rem;}
+  .outcome-summary{font-size:.92rem;color:var(--text-soft);margin:-.6rem 0 1rem;}
+  .qb select{min-height:44px;}
+  .qb input[type=tel],.qb input[type=datetime-local]{width:100%;font:inherit;color:var(--text);background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:.65rem .8rem;}
+
+  /* ---------- calendar (assets/staff-jobs.js) ---------- */
+  .cal-nav{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;}
+  .cal-nav .ghost[aria-label]{width:40px;padding:0;font-size:1.2rem;}
+  .cal-range{font-size:1.15rem;margin-left:.5rem;}
+  .cal-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.6rem;align-items:start;}
+  .cal-day{padding:.6rem;display:flex;flex-direction:column;gap:.45rem;min-height:200px;min-width:0;}
+  .cal-day.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+  .cal-day-head{display:flex;align-items:baseline;gap:.4rem;padding:0 .15rem .2rem;}
+  .cal-dow{font:700 .72rem var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--text-soft);}
+  .cal-date{font:600 1.25rem/1 var(--font-display);}
+  .cal-day.today .cal-date{color:var(--accent-strong);}
+  :root[data-theme=dark] .cal-day.today .cal-date{color:#7cc4f0;}
+  .cal-add{margin-left:auto;width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--bg);color:var(--text-soft);font:600 1.05rem/1 var(--font-body);padding:0;}
+  .cal-add:hover,.cal-add:focus-visible{border-color:var(--accent);color:var(--text);}
+  .cal-empty{font-size:.8rem;color:var(--text-soft);padding:.2rem .15rem;}
+  .cal-missing{grid-column:1 / -1;}
+  .cal-ready{margin:0;}
+  .job-card{display:flex;flex-direction:column;gap:.15rem;width:100%;text-align:left;padding:.5rem .6rem;border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;background:var(--bg);color:var(--text);font:inherit;min-width:0;}
+  .job-card:hover,.job-card:focus-visible{border-color:var(--accent);}
+  .job-card.job-in_progress{border-left-color:#eb6834;}
+  .job-card.job-done{border-left-color:#1baf7a;opacity:.85;}
+  .job-card.job-cancelled{border-left-color:var(--border);opacity:.6;}
+  .job-card.job-cancelled .job-name{text-decoration:line-through;}
+  .job-time{font-size:.74rem;font-weight:700;color:var(--text-soft);font-variant-numeric:tabular-nums;}
+  .job-name{font-weight:700;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .job-sub{font-size:.78rem;color:var(--text-soft);overflow-wrap:anywhere;}
+  .job-foot{display:flex;flex-wrap:wrap;gap:.3rem .45rem;align-items:center;font-size:.74rem;color:var(--text-soft);margin-top:.15rem;}
+  .pill.job-scheduled{background:#dceefc;color:#0a4f8a;}
+  .pill.job-in_progress{background:#ffe3d9;color:#a3301a;}
+  .pill.job-done{background:#d6f3e8;color:#0d6b4a;}
+  .pill.job-cancelled{background:var(--border-soft);color:var(--text-soft);}
+  :root[data-theme=dark] .pill.job-scheduled{background:rgba(90,169,230,.2);color:#a9d3f5;}
+  :root[data-theme=dark] .pill.job-in_progress{background:rgba(255,130,100,.2);color:#ffb59f;}
+  :root[data-theme=dark] .pill.job-done{background:rgba(27,175,122,.18);color:#8fe0c0;}
+  .quote-jobs{display:grid;gap:.5rem;justify-items:start;}
+  @media (max-width:1150px){ .cal-week{grid-template-columns:repeat(4,minmax(0,1fr));} }
+  .job-dialog{position:fixed;inset:0;margin:auto;height:fit-content;width:min(640px,calc(100vw - 2rem));max-height:calc(100vh - 2rem);overflow:auto;padding:1.3rem 1.4rem;color:var(--text);}
+  .job-dialog::backdrop{background:rgba(5,20,35,.55);}
+  .job-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+  .job-dialog-head h2{font-size:1.4rem;}
+
+  /* ---------- revenue (dashboard) ---------- */
+  .money-figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem;margin-bottom:.6rem;}
+  .money-fig{display:flex;flex-direction:column;gap:.2rem;padding:.7rem .85rem;border:1px solid var(--border-soft);border-radius:12px;background:var(--bg);}
+  .money-fig-label{font-size:.8rem;font-weight:600;color:var(--text-soft);}
+  .money-fig-value{font:600 1.7rem/1.1 var(--font-display);font-variant-numeric:tabular-nums;}
+  .money-fig-hint{font-size:.76rem;color:var(--text-soft);}
+  @media (max-width:1150px){ .money-figs{grid-template-columns:repeat(2,minmax(0,1fr));} }
+
+  /* ---------- new-quote alerts ---------- */
+  .user-item .state{float:right;margin-left:1rem;color:var(--text-soft);font-weight:600;}
+  .user-item[aria-pressed=true] .state{color:var(--accent-strong);}
+  :root[data-theme=dark] .user-item[aria-pressed=true] .state{color:#7cc4f0;}
+  .toasts{position:fixed;right:1rem;bottom:1rem;z-index:60;display:flex;flex-direction:column;gap:.5rem;width:min(380px,calc(100vw - 2rem));pointer-events:none;}
+  .toast{pointer-events:auto;display:flex;align-items:center;gap:.6rem;padding:.75rem .8rem .75rem 1rem;border-radius:14px;background:var(--bg-raised);border:1px solid var(--border);border-left:5px solid #1fbfd1;box-shadow:var(--shadow);font-size:.92rem;}
+  .toast > span{flex:1;min-width:0;}
+  .toast-close{background:none;border:0;color:var(--text-soft);font-size:1.3rem;line-height:1;padding:.2rem .4rem;min-height:36px;}
+
   @media (max-width:820px){
     .panes{grid-template-columns:1fr;}
     .list,.detail{max-height:none;}
@@ -158,6 +373,40 @@
     .panes:not(.showing-detail) .detail{display:none;}
     .back{display:inline-flex;}
     .msg{max-width:100%;}
+    /* phones: the side nav becomes a bottom tab bar; filter chips scroll sideways in one tidy row */
+    .staff-shell{grid-template-columns:1fr;padding-bottom:calc(68px + env(safe-area-inset-bottom));}
+    .side-nav{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:40;height:auto;flex-direction:row;gap:.2rem;padding:.35rem .5rem calc(.35rem + env(safe-area-inset-bottom));border-right:0;border-top:1px solid var(--border);box-shadow:0 -8px 24px -18px rgba(0,0,0,.5);}
+    .nav-item{position:relative;flex:1;flex-direction:column;justify-content:center;gap:.2rem;padding:.45rem .3rem;font-size:.74rem;text-align:center;}
+    .nav-item .count{position:absolute;top:.15rem;left:calc(50% + .45rem);margin:0;}
+    .filter-row{flex-direction:column;align-items:stretch;gap:.4rem;}
+    .filter-label{width:auto;}
+    .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:-1.1rem;padding-inline:1.1rem;}
+    .chips::-webkit-scrollbar{display:none;}
+    /* fade at the right edge hints that the row scrolls sideways */
+    .chips{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 2.2rem),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 2.2rem),transparent);padding-right:2.4rem;}
+    .cust-search{width:100%;}
+    .stats{gap:.7rem;}
+    .stat{padding:.85rem .9rem .9rem 1.15rem;}
+    .stat-value{font-size:1.9rem;}
+    /* phones: service names sit above their bars instead of being cut off beside them */
+    .viz{--lab:0px;}
+    .hbar-row{grid-template-columns:1fr;height:auto;gap:.3rem;padding:.35rem 0;}
+    .hbar-label{padding-left:0;}
+    .hbar-track{height:22px;}
+    .hbar-grid span:not(:first-child){display:none;}
+    .vcol-x{font-size:.7rem;}
+    .staff-bar{gap:.5rem;}
+    .staff-brand{font-size:1.3rem;white-space:nowrap;}
+    .staff-bar .theme-btn,.user-btn{flex:none;}
+    /* phones: the week becomes a list of days */
+    .cal-week{grid-template-columns:1fr;}
+    .cal-day{min-height:0;}
+    .cal-range{flex-basis:100%;margin:.3rem 0 0;}
+    .money-figs{gap:.5rem;}
+    .money-fig-value{font-size:1.35rem;}
+    .toasts{bottom:calc(76px + env(safe-area-inset-bottom));right:.75rem;}
+    /* phones: rows with a button drop the side note so names and details have room */
+    .row:has(.row-action) .row-meta{display:none;}
   }
 </style>
 </head>
@@ -172,6 +421,8 @@
       </button>
       <div class="user-panel" id="userPanel" hidden>
         <div class="user-who"><strong id="staffUser"></strong><span id="staffEmail"></span></div>
+        <button type="button" class="user-item" id="alertEmail" aria-pressed="false" hidden>Email me new quotes<span class="state">Off</span></button>
+        <button type="button" class="user-item" id="alertDesktop" aria-pressed="false" hidden>Desktop alerts<span class="state">Off</span></button>
         <button type="button" class="user-item" id="changePassword">Change password</button>
         <button type="button" class="user-item" id="signOut">Sign out</button>
       </div>
@@ -220,7 +471,7 @@
           <span class="hover-btn-reveal" aria-hidden="true"><span data-label>Save password</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
           <span class="hover-btn-dot" aria-hidden="true"></span>
         </button>
-        <button class="ghost" type="button" id="passwordCancel">Back to quotes</button>
+        <button class="ghost" type="button" id="passwordCancel">Back</button>
       </div>
       <p class="note" id="passwordNote" role="status"></p>
     </form>
@@ -230,28 +481,41 @@
     <div class="card login"><h1 id="messageTitle"></h1><p id="messageText"></p></div>
   </main>
 
-  <main class="staff-app" id="appView" hidden>
-    <h1 class="quotes-heading">
-      <button class="quotes-toggle" type="button" id="quotesToggle" aria-expanded="false" aria-controls="tabs">
-        Quotes
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-      </button>
-    </h1>
-    <div class="tabs" role="tablist" aria-labelledby="quotesToggle" id="tabs" hidden></div>
-    <div class="toolbar">
-      <div class="status-actions" role="group" aria-label="Filter by status" id="filters"></div>
-      <span class="spacer"></span>
-      <button class="ghost" type="button" id="refresh">Refresh</button>
-    </div>
-    <div class="panes" id="panes">
-      <div class="card list" id="list" aria-label="Quotes"></div>
-      <section class="card detail" id="detail" aria-live="polite"></section>
-    </div>
-  </main>
+  <div class="staff-shell" id="appView" hidden>
+    <nav class="side-nav" aria-label="Staff sections">
+      <button class="nav-item" type="button" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z"/></svg><span>Dashboard</span></button>
+      <button class="nav-item" type="button" data-view="quotes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v12H5.2L4 17.2z"/><path d="M8 9h8M8 12h5"/></svg><span>Quotes</span><span class="count" id="navQuoteCount" aria-label="quotes need a reply"></span></button>
+      <button class="nav-item" type="button" data-view="calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Calendar</span></button>
+      <button class="nav-item" type="button" data-view="customers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.4c1.9.8 3 2.8 3 5.6"/></svg><span>Customers</span></button>
+    </nav>
+    <main class="staff-app">
+      <section class="view" id="dashboardView" aria-label="Dashboard"></section>
+      <section class="view" id="quotesView" aria-labelledby="quotesTitle" hidden>
+        <div class="page-head">
+          <h1 id="quotesTitle">Quotes</h1><span class="spacer"></span>
+          <button class="ghost" type="button" id="refresh">Refresh</button>
+          <p>Quote requests from the website. Pick one to see the details, reply, or send a quote.</p>
+        </div>
+        <div class="card filter-card">
+          <div class="filter-row"><span class="filter-label" id="serviceLabel">Service</span><div class="chips" role="tablist" aria-labelledby="serviceLabel" id="tabs"></div></div>
+          <div class="filter-row"><span class="filter-label" id="statusLabel">Status</span><div class="chips" role="group" aria-labelledby="statusLabel" id="filters"></div></div>
+        </div>
+        <div class="panes" id="panes">
+          <div class="card list" id="list" aria-label="Quotes"></div>
+          <section class="card detail" id="detail" aria-live="polite"></section>
+        </div>
+      </section>
+      <section class="view" id="calendarView" aria-label="Calendar" hidden></section>
+      <section class="view" id="customersView" aria-label="Customers" hidden></section>
+    </main>
+  </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js" integrity="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI" crossorigin="anonymous"></script>
 <script src="assets/staff-quote.js"></script>
+<script src="assets/staff-customers.js"></script>
+<script src="assets/staff-jobs.js"></script>
+<script src="assets/staff-dashboard.js"></script>
 <script>
 (function(){
   var SERVICES = [
@@ -260,9 +524,13 @@
     {id:'correction', label:'Paint Correction'},
     {id:'other', label:'Other'}
   ];
-  var FILTERS = [{id:'open', label:'Needs reply'}, {id:'waiting', label:'Waiting on customer'}, {id:'closed', label:'Closed'}, {id:'all', label:'All'}];
+  var FILTERS = [{id:'open', label:'Needs reply'}, {id:'waiting', label:'Waiting on customer'}, {id:'won', label:'Won'}, {id:'lost', label:'Lost'}, {id:'closed', label:'Closed'}, {id:'all', label:'All'}];
   var STATUS_LABELS = {open:'Needs reply', waiting:'Waiting', closed:'Closed'};
-  var client, session, quotes = [], service = 'vinyl', filter = 'open', selectedId = null, pollTimer;
+  var OUTCOME_LABELS = {won:'Won', lost:'Lost'};
+  // "Not a real lead" is left out of the close rate on the dashboard.
+  var LOST_REASONS = [['price','Price'], ['timing','Timing / schedule'], ['went_elsewhere','Went with someone else'], ['no_response','Stopped replying'], ['not_a_lead','Not a real lead (spam, duplicate, test)'], ['other','Other']];
+  var client, session, quotes = [], service = 'all', filter = 'open', selectedId = null, pollTimer;
+  var knownQuoteIds = null, jobsApi = null, justWon = null, refreshQuoteJobs = null;
 
   function $(id){ return document.getElementById(id); }
   // Builds DOM with textContent only, so customer-entered text can never become markup.
@@ -341,12 +609,35 @@
   });
   $('signOut').addEventListener('click', function(){ closeUserMenu(); client.auth.signOut(); });
 
-  // ---------- quote types ----------
-  $('quotesToggle').addEventListener('click', function(){
-    var open = this.getAttribute('aria-expanded') !== 'true';
-    this.setAttribute('aria-expanded', String(open));
-    $('tabs').hidden = !open;
+  // ---------- sections: Dashboard, Quotes, Calendar, Customers ----------
+  var customerList = null, dashboard = null;
+  function showView(name){
+    ['dashboard', 'quotes', 'calendar', 'customers'].forEach(function(v){ $(v + 'View').hidden = v !== name; });
+    document.querySelectorAll('.nav-item').forEach(function(b){
+      if (b.dataset.view === name) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+    if (name === 'dashboard' && dashboard) dashboard.render();
+    if (name === 'calendar' && jobsApi) jobsApi.render();
+  }
+  function goCalendar(date){
+    showView('calendar'); window.scrollTo(0, 0);
+    if (date) jobsApi.showWeekOf(date);
+  }
+  document.querySelectorAll('.nav-item').forEach(function(b){
+    b.addEventListener('click', function(){ showView(b.dataset.view); window.scrollTo(0, 0); });
   });
+  // Dashboard widgets jump straight to a filtered list (and optionally open one quote or person).
+  function goQuotes(opts){
+    service = opts.service || 'all'; filter = opts.filter || 'all';
+    renderTabs(); renderFilters(); renderList();
+    showView('quotes'); window.scrollTo(0, 0);
+    if (opts.id) openQuote(opts.id); else { selectedId = null; renderList(); renderDetail(null); }
+  }
+  function goCustomers(opts){
+    customerList.setFilters(opts);
+    showView('customers'); window.scrollTo(0, 0);
+    if (opts.id) customerList.openPerson(opts.id);
+  }
 
   // ---------- account menu ----------
   function closeUserMenu(){ $('userPanel').hidden = true; $('userBtn').setAttribute('aria-expanded', 'false'); }
@@ -381,6 +672,65 @@
     note.className = 'note'; note.textContent = 'Password saved. Use it next time you sign in.';
   });
 
+  // ---------- new-quote alerts ----------
+  // Email: a per-staff setting the Worker reads when a quote comes in. Desktop: this browser only.
+  function setToggle(button, on){ button.setAttribute('aria-pressed', String(on)); button.querySelector('.state').textContent = on ? 'On' : 'Off'; }
+  async function loadEmailAlert(){
+    $('alertEmail').hidden = true;
+    var result = await client.from('staff').select('alert_new_quotes').eq('user_id', session.user.id).maybeSingle();
+    if (result.error || !result.data) return;   // the alerts part of supabase/schema.sql hasn't been run yet
+    setToggle($('alertEmail'), result.data.alert_new_quotes);
+    $('alertEmail').hidden = false;
+  }
+  $('alertEmail').addEventListener('click', async function(){
+    var button = this, on = button.getAttribute('aria-pressed') !== 'true';
+    button.disabled = true;
+    var result = await client.from('staff').update({alert_new_quotes: on}).eq('user_id', session.user.id);
+    button.disabled = false;
+    if (result.error) return alert('Couldn\'t change the email setting. Please try again.');
+    setToggle(button, on);
+    toast(on ? 'You\'ll get an email at ' + session.user.email + ' for each new quote request.' : 'New-quote emails are off for you. The shop inbox still gets every request.');
+  });
+  function desktopOn(){ try { return 'Notification' in window && Notification.permission === 'granted' && localStorage.getItem('staff-desktop-alerts') === 'on'; } catch (e) { return false; } }
+  if ('Notification' in window) { $('alertDesktop').hidden = false; setToggle($('alertDesktop'), desktopOn()); }
+  $('alertDesktop').addEventListener('click', async function(){
+    var button = this;
+    if (Notification.permission === 'denied') return alert('Desktop alerts are blocked for this site. Allow notifications for it in your browser\'s site settings, then try again.');
+    var turnOn = !desktopOn();
+    if (turnOn && Notification.permission !== 'granted' && (await Notification.requestPermission()) !== 'granted') return;
+    try { localStorage.setItem('staff-desktop-alerts', turnOn ? 'on' : 'off'); } catch (e) {}
+    setToggle(button, desktopOn());
+    toast(desktopOn() ? 'Desktop alerts are on while the staff page is open in this browser.' : 'Desktop alerts are off in this browser.');
+  });
+
+  var toastBox = el('div', {className:'toasts', role:'status', 'aria-live':'polite'});
+  document.body.append(toastBox);
+  function toast(text, actionText, action){
+    var item = el('div', {className:'toast'}, el('span', {text:text}),
+      actionText ? el('button', {type:'button', className:'ghost', text:actionText, on:{click:function(){ item.remove(); action(); }}}) : null,
+      el('button', {type:'button', className:'toast-close', 'aria-label':'Dismiss', text:'×', on:{click:function(){ item.remove(); }}}));
+    toastBox.append(item);
+    window.setTimeout(function(){ item.remove(); }, actionText ? 120000 : 8000);
+  }
+  // The tab title counts new requests that arrived while the tab was in the background.
+  var baseTitle = document.title, unseen = 0;
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) { unseen = 0; document.title = baseTitle; } });
+  function announce(fresh){
+    var one = fresh[0];
+    var text = fresh.length === 1
+      ? 'New quote request from ' + one.customer_name + (SERVICE_SHORT[one.service] && one.service !== 'other' ? ' (' + SERVICE_SHORT[one.service].toLowerCase() + ')' : '')
+      : fresh.length + ' new quote requests';
+    function go(){ if (fresh.length === 1) goQuotes({service:'all', filter:'open', id:one.id}); else goQuotes({service:'all', filter:'open'}); }
+    toast(text, fresh.length === 1 ? 'Open' : 'See them', go);
+    if (document.hidden) { unseen += fresh.length; document.title = '(' + unseen + ') New quote · ' + baseTitle; }
+    if (desktopOn()) {
+      try {
+        var n = new Notification('Splash and Dash staff', {body: text, tag: 'new-quote', icon: 'images/favicon-64.png'});
+        n.onclick = function(){ window.focus(); go(); n.close(); };
+      } catch (e) {}
+    }
+  }
+
   async function onSession(next){
     // Supabase re-announces SIGNED_IN when the tab regains focus; don't rebuild the page (and lose a draft) for that.
     if (next && session && next.user.id === session.user.id) { session = next; return; }
@@ -388,8 +738,10 @@
     closeUserMenu();
     $('userMenu').hidden = !session;
     $('changePassword').hidden = true;
+    $('alertEmail').hidden = true;
     $('staffUser').textContent = $('staffEmail').textContent = '';
     window.clearInterval(pollTimer);
+    knownQuoteIds = null;
     if (!session) { show('loginView'); return; }
     var staff = await client.from('staff').select('user_id,name').eq('user_id', session.user.id);
     if (staff.error || !staff.data.length) {
@@ -402,44 +754,109 @@
     if (name) $('staffEmail').textContent = session.user.email;
     $('changePassword').hidden = false;
     show('appView');
+    if (!customerList) {
+      customerList = StaffCustomers.mount({
+        root: $('customersView'), client: client, el: el, when: when, whenLong: whenLong,
+        getQuotes: function(){ return quotes; },
+        openQuote: function(id){ openQuote(id); },
+        reloadQuotes: loadQuotes,
+        staffName: function(){ return $('staffUser').textContent; },
+        authToken: async function(){ return (await client.auth.getSession()).data.session.access_token; },
+        onChange: function(){ if (dashboard && !$('dashboardView').hidden) dashboard.render(); }
+      });
+      jobsApi = StaffJobs.mount({
+        root: $('calendarView'), client: client, el: el, when: when, whenLong: whenLong,
+        getQuotes: function(){ return quotes; },
+        getCustomers: customerList.getCustomers,
+        openQuote: function(id){ openQuote(id); },
+        onChange: function(){ if (dashboard && !$('dashboardView').hidden) dashboard.render(); },
+        // A saved job can change the open quote's Jobs list and (through the database) the customer's stage.
+        onSaved: function(job){
+          if (refreshQuoteJobs && job.quote_id && job.quote_id === selectedId) refreshQuoteJobs();
+          customerList.refresh();
+        }
+      });
+      dashboard = StaffDashboard.mount({
+        root: $('dashboardView'), client: client, el: el, when: when,
+        staffName: function(){ return $('staffUser').textContent; },
+        getQuotes: function(){ return quotes; },
+        getCustomers: customerList.getCustomers,
+        jobs: jobsApi,
+        goQuotes: goQuotes, goCustomers: goCustomers, goCalendar: goCalendar
+      });
+    }
+    loadEmailAlert();
     var pending = null;
     try { pending = localStorage.getItem('staff-open-quote'); localStorage.removeItem('staff-open-quote'); } catch (e) {}
-    await loadQuotes();
-    if (pending) openQuote(pending);
-    else renderDetail(null);
-    pollTimer = window.setInterval(function(){ if (!document.hidden) loadQuotes(); }, 60000);
+    await Promise.all([loadQuotes(), customerList.refresh(), jobsApi.refresh()]);
+    renderDetail(null);
+    if (pending) openQuote(pending); else showView('dashboard');
+    // Quotes are checked even while the tab is in the background so new-request alerts still arrive.
+    pollTimer = window.setInterval(function(){
+      var work = [loadQuotes()];
+      if (!document.hidden) work.push(customerList.refresh(), jobsApi.refresh());
+      Promise.all(work).then(function(){
+        if (!$('dashboardView').hidden) dashboard.render();
+        if (!$('calendarView').hidden) jobsApi.render();
+      });
+    }, 60000);
   }
 
   // ---------- list ----------
+  var QUOTE_COLUMNS = 'id,created_at,service,status,customer_name,email,phone,vehicle,last_message_at';
   async function loadQuotes(){
-    var result = await client.from('quotes')
-      .select('id,created_at,service,status,customer_name,vehicle,last_message_at')
-      .order('last_message_at', {ascending:false}).limit(500);
+    function fetchQuotes(columns){ return client.from('quotes').select(columns).order('last_message_at', {ascending:false}).limit(500); }
+    var result = await fetchQuotes(QUOTE_COLUMNS + ',outcome,won_amount,lost_reason,decided_at');
+    // Until the won/lost part of supabase/schema.sql is run, those columns don't exist; keep the page working.
+    if (result.error) result = await fetchQuotes(QUOTE_COLUMNS);
     if (result.error) { $('list').replaceChildren(el('p', {className:'list-empty', text:'Couldn\'t load quotes. Try Refresh.'})); return; }
+    // Alert on website requests that weren't there last time (quotes staff start themselves begin as "waiting").
+    if (knownQuoteIds) {
+      var fresh = result.data.filter(function(q){ return !knownQuoteIds[q.id] && q.status === 'open'; });
+      if (fresh.length) announce(fresh);
+    }
+    knownQuoteIds = {};
+    result.data.forEach(function(q){ knownQuoteIds[q.id] = true; });
     quotes = result.data;
+    var open = quotes.filter(function(q){ return q.status === 'open'; }).length;
+    $('navQuoteCount').textContent = open ? String(open) : '';
     renderTabs(); renderFilters(); renderList();
   }
 
+  function inService(q){ return service === 'all' || q.service === service; }
+  // Won and Lost filter by the quote's result; the others by where the conversation stands.
+  function inFilter(q, f){ return f === 'all' || (f === 'won' || f === 'lost' ? q.outcome === f : q.status === f); }
+  // A closed quote shows its result; one still being talked about shows both.
+  function statusPills(q){
+    var frag = document.createDocumentFragment();
+    if (q.status !== 'closed' || !q.outcome) frag.append(el('span', {className:'pill ' + q.status, text:STATUS_LABELS[q.status]}));
+    if (q.outcome) frag.append(el('span', {className:'pill ' + q.outcome, text:OUTCOME_LABELS[q.outcome]}));
+    return frag;
+  }
+  // Service chips count quotes that need a reply; status chips count quotes in the chosen service.
   function renderTabs(){
-    $('tabs').replaceChildren.apply($('tabs'), SERVICES.filter(function(s){
+    $('tabs').replaceChildren.apply($('tabs'), [{id:'all', label:'All services'}].concat(SERVICES.filter(function(s){
       return s.id !== 'other' || quotes.some(function(q){ return q.service === 'other'; });
-    }).map(function(s){
-      var open = quotes.filter(function(q){ return q.service === s.id && q.status === 'open'; }).length;
-      return el('button', {type:'button', className:'tab', role:'tab', 'aria-selected': String(s.id === service),
-        on:{click:function(){ service = s.id; renderTabs(); renderList(); }}},
+    })).map(function(s){
+      var open = quotes.filter(function(q){ return (s.id === 'all' || q.service === s.id) && q.status === 'open'; }).length;
+      return el('button', {type:'button', className:'chip', role:'tab', 'aria-selected': String(s.id === service),
+        on:{click:function(){ service = s.id; renderTabs(); renderFilters(); renderList(); }}},
         s.label, el('span', {className:'count', 'aria-label': open + ' need a reply', text: open ? String(open) : ''}));
     }));
   }
 
   function renderFilters(){
     $('filters').replaceChildren.apply($('filters'), FILTERS.map(function(f){
-      return el('button', {type:'button', className:'ghost', 'aria-pressed': String(f.id === filter), text:f.label,
-        on:{click:function(){ filter = f.id; renderFilters(); renderList(); }}});
+      var n = quotes.filter(function(q){ return inService(q) && inFilter(q, f.id); }).length;
+      return el('button', {type:'button', className:'chip', 'aria-pressed': String(f.id === filter),
+        on:{click:function(){ filter = f.id; renderFilters(); renderList(); }}},
+        f.label, el('span', {className:'count' + (f.id === 'all' ? '' : ' status-' + f.id), text: n ? String(n) : ''}));
     }));
   }
 
+  var SERVICE_SHORT = {vinyl:'Vinyl wrap', ceramic:'Ceramic coating', correction:'Paint correction', other:'Other'};
   function renderList(){
-    var shown = quotes.filter(function(q){ return q.service === service && (filter === 'all' || q.status === filter); });
+    var shown = quotes.filter(function(q){ return inService(q) && inFilter(q, filter); });
     var list = $('list');
     if (!shown.length) {
       list.replaceChildren(el('p', {className:'list-empty', text: filter === 'open' ? 'Nothing needs a reply here.' : 'No quotes here yet.'}));
@@ -448,7 +865,8 @@
     list.replaceChildren.apply(list, shown.map(function(q){
       return el('button', {type:'button', className:'item', 'aria-current': String(q.id === selectedId), on:{click:function(){ openQuote(q.id); }}},
         el('div', {className:'item-top'}, el('span', {className:'item-name', text:q.customer_name}), el('span', {className:'item-date', text:when(q.last_message_at)})),
-        el('div', {className:'item-sub'}, el('span', {className:'pill ' + q.status, text:STATUS_LABELS[q.status]}), el('span', {text:q.vehicle || ''})));
+        el('div', {className:'item-sub'}, statusPills(q),
+          service === 'all' ? el('span', {text:SERVICE_SHORT[q.service]}) : null, el('span', {text:q.vehicle || ''})));
     }));
   }
 
@@ -462,6 +880,7 @@
   }
 
   async function openQuote(id){
+    showView('quotes');
     selectedId = id;
     history.replaceState(null, '', '#quote=' + id);
     var results = await Promise.all([
@@ -470,7 +889,7 @@
     ]);
     var quote = results[0].data, messages = results[1].data || [];
     if (!quote) { renderDetail(el('p', {className:'detail-empty', text:'That quote couldn\'t be found.'})); return; }
-    if (quote.service !== service) { service = quote.service; renderTabs(); }
+    if (service !== 'all' && quote.service !== service) { service = quote.service; renderTabs(); renderFilters(); }
     renderList();
     // One batch of signed links for the customer's uploads and any quote PDFs staff sent.
     var paths = quote.files.map(function(f){ return f.path; })
@@ -497,21 +916,127 @@
     await openQuote(quote.id);
   }
 
+  // Saves status and/or won/lost changes, then refreshes the list and the open quote.
+  var OUTCOME_COLUMNS = 'status,outcome,won_amount,lost_reason,outcome_note,decided_at';
+  async function updateQuote(quote, patch){
+    var result = await client.from('quotes').update(patch).eq('id', quote.id).select('outcome' in patch ? OUTCOME_COLUMNS : 'status').single();
+    if (result.error) return false;
+    quotes.forEach(function(q){ if (q.id === quote.id) Object.assign(q, result.data); });
+    renderTabs(); renderFilters();
+    // Winning a quote (through the database) moves the person to Booked on the customer list.
+    if ('outcome' in patch) customerList.refresh();
+    await openQuote(quote.id);
+    return true;
+  }
   function setStatus(quote, status){
-    return client.from('quotes').update({status: status}).eq('id', quote.id).then(function(result){
-      if (result.error) return alert('Couldn\'t update the status. Please try again.');
-      quotes.forEach(function(q){ if (q.id === quote.id) q.status = status; });
-      renderTabs(); openQuote(quote.id);
-    });
+    return updateQuote(quote, {status: status}).then(function(ok){ if (!ok) alert('Couldn\'t update the status. Please try again.'); });
+  }
+  function reopen(quote){
+    if (quote.outcome && !confirm('Reopen this quote? Its ' + OUTCOME_LABELS[quote.outcome].toLowerCase() + ' result will be cleared.')) return;
+    var patch = {status: 'open'};
+    if (quote.outcome !== undefined) patch.outcome = null;
+    updateQuote(quote, patch).then(function(ok){ if (!ok) alert('Couldn\'t reopen the quote. Please try again.'); });
   }
 
+  function formField(id, text, control, hint){
+    control.id = id;
+    return el('div', {className:'qb-field'}, el('label', {htmlFor:id, text:text}), control, hint ? el('span', {className:'qb-hint', text:hint}) : null);
+  }
+  // Record (or change) whether the customer went ahead. Won asks for the agreed price, which counts as revenue.
+  function outcomeForm(quote, kind, lastQuote, onCancel){
+    var form = el('form', {className:'card outcome-form', 'aria-label':'Won or lost'});
+    var picker = el('div', {className:'status-actions', role:'group', 'aria-label':'Result'});
+    [['won', 'Won: they\'re going ahead'], ['lost', 'Lost: they\'re not']].forEach(function(o){
+      picker.append(el('button', {type:'button', className:'ghost', 'aria-pressed': String(o[0] === kind), text:o[1], on:{click:function(){
+        kind = o[0];
+        picker.querySelectorAll('button').forEach(function(b){ b.setAttribute('aria-pressed', String(b === this)); }, this);
+        wonFields.hidden = kind !== 'won'; lostFields.hidden = kind !== 'lost';
+      }}}));
+    });
+    var suggested = quote.won_amount != null ? quote.won_amount : lastQuote && lastQuote.document.total ? lastQuote.document.total : '';
+    var amount = el('input', {type:'number', min:'0', step:'0.01', value: suggested === '' ? '' : String(suggested), inputMode:'decimal'});
+    var amountHint = quote.won_amount != null ? 'The amount saved when it was marked won.'
+      : lastQuote ? 'From quote ' + lastQuote.document.number + ' sent ' + when(lastQuote.created_at) + '. Change it if the final price was different.'
+      : 'No quote PDF was sent, so enter the price you agreed on.';
+    var reason = el('select');
+    LOST_REASONS.forEach(function(r){ reason.append(el('option', {value:r[0], text:r[1], selected:r[0] === (quote.lost_reason || 'price')})); });
+    var note = el('textarea', {rows:2, maxLength:2000, value:quote.outcome_note || '', placeholder:'Optional: anything worth remembering'});
+    var wonFields = el('div', {className:'qb-grid', hidden: kind !== 'won'}, formField('wonAmount', 'Agreed price ($)', amount, amountHint));
+    var lostFields = el('div', {className:'qb-grid', hidden: kind !== 'lost'}, formField('lostReason', 'Why', reason));
+    var status = el('p', {className:'note', role:'status'});
+    form.append(el('span', {className:'cust-status-label', text:'How did it go?'}), picker,
+      el('div', {className:'qb'}, wonFields, lostFields, formField('outcomeNote', 'Note', note),
+        el('div', {className:'reply-actions'},
+          el('button', {type:'submit', className:'btn-primary', text:'Save'}),
+          el('button', {type:'button', className:'ghost', text:'Cancel', on:{click:onCancel}}), status)));
+    form.addEventListener('submit', async function(event){
+      event.preventDefault();
+      var price = amount.value.trim();
+      if (kind === 'won' && price !== '' && !(Number(price) >= 0)) { status.className = 'note error'; status.textContent = 'Enter a price of $0 or more, or leave it blank.'; return; }
+      var patch = {outcome: kind, won_amount: kind === 'won' && price !== '' ? Number(price) : null,
+        lost_reason: kind === 'lost' ? reason.value : null, outcome_note: note.value.trim() || null};
+      // Deciding closes the conversation; changing an earlier decision leaves it where it is.
+      if (!quote.outcome) patch.status = 'closed';
+      var button = form.querySelector('button[type=submit]');
+      button.disabled = true; status.className = 'note'; status.textContent = '';
+      if (kind === 'won' && quote.outcome !== 'won') justWon = quote.id;
+      if (!(await updateQuote(quote, patch))) {
+        button.disabled = false; justWon = null;
+        status.className = 'note error';
+        status.textContent = 'Couldn\'t save. If this keeps happening, run the latest supabase/schema.sql in Supabase (see DEPLOYMENT.md).';
+      }
+    });
+    return form;
+  }
+
+  // Jobs booked from this quote, with a button to schedule one. Re-rendered on its own when a job is saved.
+  function quoteJobs(quote){
+    var box = el('div');
+    function render(){
+      if (!jobsApi || !jobsApi.isReady()) { box.replaceChildren(); return; }
+      var list = jobsApi.jobsForQuote(quote.id);
+      if (quote.outcome !== 'won' && !list.length) { box.replaceChildren(); return; }
+      var inner = el('div', {className:'quote-jobs'});
+      if (justWon === quote.id) {
+        inner.append(el('p', {className:'note cust-flash', role:'status', text:'Marked as won' + (quote.won_amount != null ? ' at ' + money(quote.won_amount) : '') + '. Next, put the job on the calendar.'}));
+        justWon = null;
+      }
+      if (!list.length) inner.append(el('p', {className:'thread-empty', text:'No job is booked for this quote yet.'}));
+      list.forEach(function(j){
+        inner.append(el('button', {type:'button', className:'ghost', text: jobsApi.whenText(j) + ' · ' + jobsApi.statusLabel(j.status) + (j.assigned_to ? ' · ' + jobsApi.staffLabel(j.assigned_to) : ''),
+          on:{click:function(){ jobsApi.openJob(j.id); }}}));
+      });
+      inner.append(el('button', {type:'button', className:'btn-primary', text: list.length ? '+ Schedule another job' : 'Schedule the job', on:{click:function(){ jobsApi.scheduleQuote(quote); }}}));
+      box.replaceChildren(el('h3', {className:'detail-label', text:'Jobs'}), inner);
+    }
+    render();
+    refreshQuoteJobs = render;
+    return box;
+  }
+
+  var REASON_NAMES = {};
+  LOST_REASONS.forEach(function(r){ REASON_NAMES[r[0]] = r[1]; });
   function quoteView(quote, messages, signed){
     var wrap = el('div');
     wrap.append(el('button', {type:'button', className:'ghost back', text:'← All quotes', on:{click:function(){ selectedId = null; history.replaceState(null, '', location.pathname); renderList(); renderDetail(null); }}}));
 
-    var actions = el('div', {className:'status-actions'}, el('span', {className:'pill ' + quote.status, text:STATUS_LABELS[quote.status]}));
-    if (quote.status !== 'closed') actions.append(el('button', {type:'button', className:'ghost', text:'Mark closed', on:{click:function(){ setStatus(quote, 'closed'); }}}));
-    else actions.append(el('button', {type:'button', className:'ghost', text:'Reopen', on:{click:function(){ setStatus(quote, 'open'); }}}));
+    var lastQuote = messages.filter(function(m){ return m.direction === 'outbound' && m.document; }).pop() || null;
+    var outcomeArea = el('div');
+    function decide(kind){
+      outcomeArea.replaceChildren(outcomeForm(quote, kind, lastQuote, function(){ if (summary) outcomeArea.replaceChildren(summary); else outcomeArea.replaceChildren(); }));
+      outcomeArea.querySelector('input,select').focus();
+    }
+    // Quotes loaded before the won/lost columns exist have no outcome key at all; hide the buttons then.
+    var tracksOutcome = 'outcome' in quote;
+    var actions = el('div', {className:'status-actions'}, statusPills(quote));
+    if (tracksOutcome && !quote.outcome) {
+      actions.append(el('button', {type:'button', className:'ghost', text:'Won', on:{click:function(){ decide('won'); }}}),
+        el('button', {type:'button', className:'ghost', text:'Lost', on:{click:function(){ decide('lost'); }}}));
+    } else if (tracksOutcome) {
+      actions.append(el('button', {type:'button', className:'ghost', text:'Change result', on:{click:function(){ decide(quote.outcome); }}}));
+    }
+    if (!tracksOutcome && quote.status !== 'closed') actions.append(el('button', {type:'button', className:'ghost', text:'Mark closed', on:{click:function(){ setStatus(quote, 'closed'); }}}));
+    if (quote.status === 'closed') actions.append(el('button', {type:'button', className:'ghost', text:'Reopen', on:{click:function(){ reopen(quote); }}}));
     if (quote.status === 'open') actions.append(el('button', {type:'button', className:'ghost', text:'No reply needed', on:{click:function(){ setStatus(quote, 'waiting'); }}}));
 
     wrap.append(el('div', {className:'detail-head'},
@@ -522,6 +1047,17 @@
           quote.phone ? el('a', {href:'tel:' + quote.phone.replace(/[^\d+]/g, ''), text:quote.phone}) : null,
           el('span', {text:'Received ' + whenLong(quote.created_at)}))),
       actions));
+
+    var summary = null;
+    if (quote.outcome) {
+      var bits = quote.outcome === 'won'
+        ? ['Won' + (quote.won_amount != null ? ' at ' + money(quote.won_amount) : ' (no price recorded)')]
+        : ['Lost' + (quote.lost_reason ? ': ' + REASON_NAMES[quote.lost_reason] : '')];
+      if (quote.decided_at) bits.push(whenLong(quote.decided_at) + (quote.decided_by ? ' by ' + quote.decided_by : ''));
+      summary = el('p', {className:'outcome-summary', text: bits.join(' · ') + (quote.outcome_note ? ' · “' + quote.outcome_note + '”' : '')});
+      outcomeArea.append(summary);
+    }
+    wrap.append(outcomeArea, quoteJobs(quote));
 
     wrap.append(el('h3', {className:'detail-label', text:'Request'}));
     var table = el('table', {className:'fields'});
