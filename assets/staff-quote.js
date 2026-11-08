@@ -32,6 +32,11 @@
       title: "CERAMIC COATING QUOTE", name: "Ceramic Coating", prefix: "CC", file: "Ceramic-Coating-Quote", colorLabel: "Paint color",
       lines: [["base","Base coating"],["prep","Preparation minimum"],["correction","Paint correction"],["addons","Components/add-ons"]],
       fine: "Estimate only. Preparation starts at $200. Final pricing depends on size, condition, preparation, coating grade, correction needs, existing layers, and water spots. Ceramic coating is not paint repair or dent protection. Final scope and price require inspection or clear vehicle photographs."
+    },
+    // Custom: staff list any work as line items (used from the customer list for jobs outside one template).
+    other: {
+      title: "SERVICE QUOTE", name: "Custom", prefix: "SQ", file: "Service-Quote", colorLabel: "Paint color", custom: true, lines: [],
+      fine: "Estimate only. Prices cover the work listed above; anything not listed is additional. Final scope and price require an in-person inspection or review of clear vehicle photographs."
     }
   };
 
@@ -67,7 +72,8 @@
       color: f['Paint Color'] || '', condition: f['Vehicles Condition'] || '',
       previous: f['Previous Paintwork'] === 'Yes' ? 'Reported by customer' : '',
       checks: {}, panels: '', colorFinish: '', film: '', level: '', tier: '',
-      amounts: {}, deposit: '', notes: '', preparedBy: staffName || ''
+      amounts: {}, deposit: '', notes: '', preparedBy: staffName || '',
+      items: [{desc:'', amount:''}]
     };
     if (quote.service === 'vinyl') {
       doc.checks['Full color change'] = f['Wrap Coverage'] === 'Full wrap';
@@ -130,6 +136,7 @@
   }
 
   function total(service, doc){
+    if (TEMPLATES[service].custom) return doc.items.reduce(function(sum, it){ var v = parseFloat(it.amount); return sum + (isNaN(v) ? 0 : v); }, 0);
     return TEMPLATES[service].lines.reduce(function(sum, line){ var v = parseFloat(doc.amounts[line[0]]); return sum + (isNaN(v) ? 0 : v); }, 0);
   }
 
@@ -200,8 +207,31 @@
       scope.append(vg, checks('Extras', WRAP_EXTRAS));
     } else if (service === 'correction') {
       scope.append(checks('Correction level', LEVELS, 'level'), checks('Protection', PROTECTION), checks('Conditions', CONDITIONS));
-    } else {
+    } else if (service === 'ceramic') {
       scope.append(checks('Tier', TIERS, 'tier'), checks('Package', PACKAGES), checks('Component / accent options', CERAMIC_ADDONS));
+    } else {
+      scope.append(itemsEditor());
+    }
+
+    // Custom quotes: one row per piece of work, each with its own price.
+    function itemsEditor(){
+      var wrap = el('div', {className:'qb-items'});
+      function draw(){
+        wrap.replaceChildren();
+        doc.items.forEach(function(it, i){
+          var desc = el('input', {type:'text', value:it.desc, maxLength:300, placeholder:'e.g. Satin black roof wrap', 'aria-label':'Work ' + (i + 1)});
+          var amt = el('input', {type:'number', min:'0', step:'0.01', inputMode:'decimal', value:it.amount, placeholder:'0', 'aria-label':'Price for work ' + (i + 1) + ' ($)'});
+          desc.addEventListener('input', function(){ it.desc = desc.value; });
+          amt.addEventListener('input', function(){ it.amount = amt.value; refresh(); });
+          var remove = el('button', {type:'button', className:'ghost qb-item-remove', 'aria-label':'Remove work ' + (i + 1), text:'✕', disabled: doc.items.length === 1, on:{click:function(){ doc.items.splice(i, 1); draw(); refresh(); }}});
+          wrap.append(el('div', {className:'qb-item'}, desc, amt, remove));
+        });
+        wrap.append(el('button', {type:'button', className:'ghost', text:'+ Add work', on:{click:function(){
+          doc.items.push({desc:'', amount:''}); draw(); wrap.querySelectorAll('.qb-item input[type=text]')[doc.items.length - 1].focus();
+        }}}));
+      }
+      draw();
+      return wrap;
     }
 
     var pricing = grid();
@@ -215,7 +245,7 @@
     var notes = el('textarea', {id: uid + 'notes', rows: 3});
     notes.addEventListener('input', function(){ doc.notes = notes.value; });
     var first = (quote.customer_name || '').split(' ')[0];
-    var subject = el('input', {type:'text', id: uid + 'subject', maxLength: 200, value: 'Your Splash and Dash ' + tpl.name + ' quote'});
+    var subject = el('input', {type:'text', id: uid + 'subject', maxLength: 200, value: 'Your Splash and Dash ' + (tpl.custom ? '' : tpl.name + ' ') + 'quote'});
     var message = el('textarea', {id: uid + 'message', rows: 5, value:
       'Hi ' + first + ',\n\nThanks for reaching out to Splash and Dash. Your quote is attached. Reply to this email to approve it or if you have any questions.\n\n' + (opts.staffName ? opts.staffName + '\n' : '') + 'Splash and Dash Car Wash & Auto Detail Center\n340-775-7405'});
     var note = el('p', {className:'note', role:'status'});
@@ -239,7 +269,7 @@
       el('h4', {text:'Quote details'}), details,
       el('h4', {text:'Customer'}), customer,
       el('h4', {text:'Vehicle'}), vehicle,
-      el('h4', {text:'Selected scope'}), scope,
+      el('h4', {text: tpl.custom ? 'Work to be done' : 'Selected scope'}), scope,
       el('h4', {text:'Pricing'}), pricing, totalRow,
       el('h4', {text:'Notes on the quote'}), notes,
       el('h4', {text:'Email'}),
@@ -248,6 +278,7 @@
       el('div', {className:'reply-actions'}, send, preview, note));
     form.addEventListener('submit', async function(event){
       event.preventDefault();
+      if (opts.sendBlocked) { note.className = 'note error'; note.textContent = opts.sendBlocked; return; }
       if (!total(service, doc)) { note.className = 'note error'; note.textContent = 'Add at least one price before sending.'; return; }
       if (!message.value.trim()) { note.className = 'note error'; note.textContent = 'Write a short message to go with the quote.'; return; }
       send.disabled = true; setSendLabel('Sending…'); note.className = 'note'; note.textContent = '';
@@ -265,6 +296,7 @@
         note.className = 'note error'; note.textContent = (error.message || 'The quote could not be sent.') + ' Your quote is still here.';
       }
     });
+    if (opts.sendBlocked) { send.disabled = true; note.textContent = opts.sendBlocked; }
     refresh();
     return form;
   }
@@ -371,13 +403,36 @@
         y -= rh;
       });
     }
-    // Six [label, amount] cells in the template's 2-column grid; the last row is total and deposit.
+    // Custom quotes: description (wrapped) and price for each piece of work.
+    function workItems(list){
+      var rh = 11.5, priceX = M + CW - 6;
+      need(rh * 2);
+      y -= 4;
+      page.drawRectangle({x: M, y: y - rh, width: CW, height: rh, color: NAVY});
+      draw('Work', M + 5, y - rh + 3.4, 8, bold, WHITE);
+      draw('Price', priceX - width('Price', bold, 8), y - rh + 3.4, 8, bold, WHITE);
+      y -= rh;
+      if (!list.length) list = [{desc:'', amount:''}];
+      list.forEach(function(it, r){
+        var lines = wrap(it.desc || '', regular, 8.5, CW * 0.78);
+        if (!lines.length) lines = [''];
+        var h = Math.max(13, lines.length * 10.5 + 4);
+        need(h);
+        page.drawRectangle({x: M, y: y - h, width: CW, height: h, color: r % 2 ? ZEBRA : WHITE, borderColor: LINE, borderWidth: 0.4});
+        lines.forEach(function(line, i){ draw(line, M + 5, y - 9.5 - i * 10.5, 8.5); });
+        var price = money(parseFloat(it.amount));
+        if (price) draw(price, priceX - width(safe(price), regular, 8.5), y - 9.5, 8.5);
+        y -= h;
+      });
+    }
+    // [label, amount] cells in the template's 2-column grid; the last row (total and deposit) is bold.
     function amounts(cells){
       var rh = 15, lab = CW * 0.22, val = CW * 0.28;
-      need(rh * 3 + 4);
+      var rowsCount = cells.length / 2;
+      need(rh * rowsCount + 4);
       y -= 6;
-      for (var r = 0; r < 3; r++) {
-        var x = M, strong = r === 2, f = strong ? bold : regular;
+      for (var r = 0; r < rowsCount; r++) {
+        var x = M, strong = r === rowsCount - 1, f = strong ? bold : regular;
         if (strong) page.drawRectangle({x: M, y: y - rh, width: CW, height: rh, color: MARK});
         [cells[r * 2], cells[r * 2 + 1]].forEach(function(cell){
           page.drawRectangle({x: x, y: y - rh, width: lab, height: rh, borderColor: TEAL, borderWidth: 0.6});
@@ -442,7 +497,7 @@
       checkRow('', LEVELS, function(n){ return doc.level === n; });
       checkRow('Protection:', PROTECTION, isChecked);
       checkRow('Conditions:', CONDITIONS, isChecked);
-    } else {
+    } else if (service === 'ceramic') {
       bar('FULL-EXTERIOR STARTING PRICES');
       table(['Vehicle Type', 'Entry Tier', 'Premium Tier'], VEHICLE_TYPES.map(function(t){ return [t].concat(CERAMIC[t]); }), [CW * .5, CW * .25, CW * .25], function(cells){
         if (cells[0] !== doc.type) return null;
@@ -453,6 +508,9 @@
       bar('SELECTED SCOPE');
       checkRow('', TIERS, function(n){ return doc.tier === n; });
       checkRow('Package:', PACKAGES, isChecked);
+    } else {
+      bar('QUOTED WORK');
+      workItems(doc.items.filter(function(it){ return (it.desc || '').trim() || it.amount !== ''; }));
     }
 
     amounts(tpl.lines.map(function(line){ return [line[1], parseFloat(doc.amounts[line[0]])]; })
